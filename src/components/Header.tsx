@@ -19,14 +19,14 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
+            <a href="/" className="text-foreground hover:text-primary transition-colors">
+              Home
+            </a>
+            <a href="/crop-planner" className="text-foreground hover:text-primary transition-colors">
+              Crop Planner
+            </a>
             <a href="#features" className="text-foreground hover:text-primary transition-colors">
               Features
-            </a>
-            <a href="#how-it-works" className="text-foreground hover:text-primary transition-colors">
-              How It Works
-            </a>
-            <a href="#community" className="text-foreground hover:text-primary transition-colors">
-              Community
             </a>
             <a href="#contact" className="text-foreground hover:text-primary transition-colors">
               Contact
@@ -53,25 +53,25 @@ const Header = () => {
           <div className="md:hidden mt-4 py-4 border-t border-border animate-fade-in">
             <nav className="flex flex-col space-y-4">
               <a 
+                href="/" 
+                className="text-foreground hover:text-primary transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </a>
+              <a 
+                href="/crop-planner" 
+                className="text-foreground hover:text-primary transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Crop Planner
+              </a>
+              <a 
                 href="#features" 
                 className="text-foreground hover:text-primary transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Features
-              </a>
-              <a 
-                href="#how-it-works" 
-                className="text-foreground hover:text-primary transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                How It Works
-              </a>
-              <a 
-                href="#community" 
-                className="text-foreground hover:text-primary transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Community
               </a>
               <a 
                 href="#contact" 
