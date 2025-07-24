@@ -14,7 +14,215 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      crop_cultivation_plans: {
+        Row: {
+          activity: string | null
+          crop_recommendation_id: number | null
+          day_number: number | null
+          description: string | null
+          estimated_duration: unknown | null
+          id: number
+          required_resources: string[] | null
+        }
+        Insert: {
+          activity?: string | null
+          crop_recommendation_id?: number | null
+          day_number?: number | null
+          description?: string | null
+          estimated_duration?: unknown | null
+          id?: never
+          required_resources?: string[] | null
+        }
+        Update: {
+          activity?: string | null
+          crop_recommendation_id?: number | null
+          day_number?: number | null
+          description?: string | null
+          estimated_duration?: unknown | null
+          id?: never
+          required_resources?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_cultivation_plans_crop_recommendation_id_fkey"
+            columns: ["crop_recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "crop_recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crop_diseases: {
+        Row: {
+          crop_name: string | null
+          disease_name: string | null
+          id: number
+          prevention_methods: string | null
+          risk_level: string | null
+          symptoms: string | null
+          treatment_methods: string | null
+        }
+        Insert: {
+          crop_name?: string | null
+          disease_name?: string | null
+          id?: never
+          prevention_methods?: string | null
+          risk_level?: string | null
+          symptoms?: string | null
+          treatment_methods?: string | null
+        }
+        Update: {
+          crop_name?: string | null
+          disease_name?: string | null
+          id?: never
+          prevention_methods?: string | null
+          risk_level?: string | null
+          symptoms?: string | null
+          treatment_methods?: string | null
+        }
+        Relationships: []
+      }
+      crop_growth_tracking: {
+        Row: {
+          crop_name: string | null
+          current_growth_stage: string | null
+          expected_harvest_date: string | null
+          health_status: string | null
+          id: number
+          last_updated: string | null
+          planting_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          crop_name?: string | null
+          current_growth_stage?: string | null
+          expected_harvest_date?: string | null
+          health_status?: string | null
+          id?: never
+          last_updated?: string | null
+          planting_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          crop_name?: string | null
+          current_growth_stage?: string | null
+          expected_harvest_date?: string | null
+          health_status?: string | null
+          id?: never
+          last_updated?: string | null
+          planting_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      crop_recommendations: {
+        Row: {
+          avg_rainfall: number | null
+          avg_temperature: number | null
+          id: number
+          recommendation_date: string | null
+          recommended_crop: string | null
+          season: string | null
+          soil_type: string | null
+          suitability_score: number | null
+          user_id: string | null
+        }
+        Insert: {
+          avg_rainfall?: number | null
+          avg_temperature?: number | null
+          id?: never
+          recommendation_date?: string | null
+          recommended_crop?: string | null
+          season?: string | null
+          soil_type?: string | null
+          suitability_score?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          avg_rainfall?: number | null
+          avg_temperature?: number | null
+          id?: never
+          recommendation_date?: string | null
+          recommended_crop?: string | null
+          season?: string | null
+          soil_type?: string | null
+          suitability_score?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      fertilizer_recommendations: {
+        Row: {
+          application_method: string | null
+          crop_name: string | null
+          fertilizer_type: string | null
+          growth_stage: string | null
+          id: number
+          quantity_per_acre: number | null
+          soil_type: string | null
+          timing: string | null
+        }
+        Insert: {
+          application_method?: string | null
+          crop_name?: string | null
+          fertilizer_type?: string | null
+          growth_stage?: string | null
+          id?: never
+          quantity_per_acre?: number | null
+          soil_type?: string | null
+          timing?: string | null
+        }
+        Update: {
+          application_method?: string | null
+          crop_name?: string | null
+          fertilizer_type?: string | null
+          growth_stage?: string | null
+          id?: never
+          quantity_per_acre?: number | null
+          soil_type?: string | null
+          timing?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          farm_size: number | null
+          full_name: string | null
+          id: number
+          location: string | null
+          phone: string | null
+          soil_type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          farm_size?: number | null
+          full_name?: string | null
+          id?: never
+          location?: string | null
+          phone?: string | null
+          soil_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          farm_size?: number | null
+          full_name?: string | null
+          id?: never
+          location?: string | null
+          phone?: string | null
+          soil_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
