@@ -66,13 +66,13 @@ const Hero = () => {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="hero" size="lg" className="group">
+              <Button variant="hero" size="lg" className="group" onClick={() => window.location.href = '/auth'}>
                 Start Free Trial
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="outline" size="lg" className="group">
+              <Button variant="outline" size="lg" className="group" onClick={() => window.location.href = '/disease-detection'}>
                 <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                Watch Demo
+                Try Disease Detection
               </Button>
             </div>
           </div>
