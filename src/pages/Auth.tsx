@@ -64,13 +64,55 @@ const Auth = () => {
 
       navigate('/dashboard');
     } catch (error) {
+      let title = "Sign In Failed";
+      let description = error.message;
+      
+      if (error.message.includes("Email not confirmed")) {
+        title = "Email Not Confirmed";
+        description = "Please check your email and click the confirmation link before signing in. Check your spam folder if you don't see it.";
+      }
+      
       toast({
-        title: "Sign In Failed",
-        description: error.message,
+        title,
+        description,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!signInData.email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: signInData.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Confirmation Email Sent",
+        description: "Please check your email for the confirmation link.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Resend",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -204,6 +246,18 @@ const Auth = () => {
                       'Sign In'
                     )}
                   </Button>
+
+                  <div className="text-center mt-4">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handleResendConfirmation}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Didn't receive confirmation email? Resend
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
