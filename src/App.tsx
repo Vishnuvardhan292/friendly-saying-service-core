@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import CropPlanner from "./pages/CropPlanner";
 import Dashboard from "./pages/Dashboard";
 import DiseaseDetection from "./pages/DiseaseDetection";
+import SoilData from "./pages/SoilData";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/crop-planner" element={<CropPlanner />} />
+          <Route path="/soil-data" element={<SoilData />} />
           <Route path="/disease-detection" element={<DiseaseDetection />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
