@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      advanced_fertilizer_recommendations: {
+        Row: {
+          application_method: string | null
+          application_timing: string | null
+          chemical_fertilizer_mix: string[] | null
+          climate_suitability: string[] | null
+          crop_name: string | null
+          expected_yield_improvement: number | null
+          growth_stage: string | null
+          id: number
+          nitrogen_recommendation: number | null
+          organic_fertilizer_mix: string[] | null
+          phosphorus_recommendation: number | null
+          potassium_recommendation: number | null
+          precautions: string | null
+          soil_type: string | null
+          water_requirement: number | null
+        }
+        Insert: {
+          application_method?: string | null
+          application_timing?: string | null
+          chemical_fertilizer_mix?: string[] | null
+          climate_suitability?: string[] | null
+          crop_name?: string | null
+          expected_yield_improvement?: number | null
+          growth_stage?: string | null
+          id?: never
+          nitrogen_recommendation?: number | null
+          organic_fertilizer_mix?: string[] | null
+          phosphorus_recommendation?: number | null
+          potassium_recommendation?: number | null
+          precautions?: string | null
+          soil_type?: string | null
+          water_requirement?: number | null
+        }
+        Update: {
+          application_method?: string | null
+          application_timing?: string | null
+          chemical_fertilizer_mix?: string[] | null
+          climate_suitability?: string[] | null
+          crop_name?: string | null
+          expected_yield_improvement?: number | null
+          growth_stage?: string | null
+          id?: never
+          nitrogen_recommendation?: number | null
+          organic_fertilizer_mix?: string[] | null
+          phosphorus_recommendation?: number | null
+          potassium_recommendation?: number | null
+          precautions?: string | null
+          soil_type?: string | null
+          water_requirement?: number | null
+        }
+        Relationships: []
+      }
       crop_cultivation_plans: {
         Row: {
           activity: string | null
@@ -151,6 +205,117 @@ export type Database = {
         }
         Relationships: []
       }
+      farm_inventory: {
+        Row: {
+          condition: string | null
+          cost_per_unit: number | null
+          created_at: string | null
+          current_location: string | null
+          expiry_date: string | null
+          id: number
+          item_name: string | null
+          item_type: string | null
+          notes: string | null
+          purchase_date: string | null
+          quantity: number | null
+          supplier: string | null
+          unit: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          condition?: string | null
+          cost_per_unit?: number | null
+          created_at?: string | null
+          current_location?: string | null
+          expiry_date?: string | null
+          id?: never
+          item_name?: string | null
+          item_type?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          quantity?: number | null
+          supplier?: string | null
+          unit?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          condition?: string | null
+          cost_per_unit?: number | null
+          created_at?: string | null
+          current_location?: string | null
+          expiry_date?: string | null
+          id?: never
+          item_name?: string | null
+          item_type?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          quantity?: number | null
+          supplier?: string | null
+          unit?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      farm_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string | null
+          crop_name: string | null
+          estimated_duration: unknown | null
+          id: number
+          notes: string | null
+          priority: string | null
+          reminder_sent: boolean | null
+          required_resources: string[] | null
+          scheduled_date: string | null
+          status: string | null
+          task_description: string | null
+          task_type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          crop_name?: string | null
+          estimated_duration?: unknown | null
+          id?: never
+          notes?: string | null
+          priority?: string | null
+          reminder_sent?: boolean | null
+          required_resources?: string[] | null
+          scheduled_date?: string | null
+          status?: string | null
+          task_description?: string | null
+          task_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          crop_name?: string | null
+          estimated_duration?: unknown | null
+          id?: never
+          notes?: string | null
+          priority?: string | null
+          reminder_sent?: boolean | null
+          required_resources?: string[] | null
+          scheduled_date?: string | null
+          status?: string | null
+          task_description?: string | null
+          task_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       fertilizer_recommendations: {
         Row: {
           application_method: string | null
@@ -218,6 +383,69 @@ export type Database = {
           location?: string | null
           phone?: string | null
           soil_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      soil_tests: {
+        Row: {
+          created_at: string | null
+          drainage_quality: string | null
+          id: number
+          latitude: number | null
+          location: string | null
+          longitude: number | null
+          nitrogen_level: number | null
+          notes: string | null
+          organic_matter_percentage: number | null
+          ph_level: number | null
+          phosphorus_level: number | null
+          potassium_level: number | null
+          report_file_url: string | null
+          soil_texture: string | null
+          soil_type: string | null
+          test_date: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          drainage_quality?: string | null
+          id?: never
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+          nitrogen_level?: number | null
+          notes?: string | null
+          organic_matter_percentage?: number | null
+          ph_level?: number | null
+          phosphorus_level?: number | null
+          potassium_level?: number | null
+          report_file_url?: string | null
+          soil_texture?: string | null
+          soil_type?: string | null
+          test_date?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          drainage_quality?: string | null
+          id?: never
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+          nitrogen_level?: number | null
+          notes?: string | null
+          organic_matter_percentage?: number | null
+          ph_level?: number | null
+          phosphorus_level?: number | null
+          potassium_level?: number | null
+          report_file_url?: string | null
+          soil_texture?: string | null
+          soil_type?: string | null
+          test_date?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
