@@ -14,55 +14,66 @@ import {
   Thermometer,
   AlertTriangle,
   CheckCircle,
-  Users
+  Users,
+  LogOut
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { useAuthProtection } from '@/hooks/useAuthProtection';
+import ProfileSetup from '@/components/ProfileSetup';
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
+  const { user, loading, requireAuth, signOut } = useAuthProtection();
   const [profile, setProfile] = useState(null);
   const [cropTracking, setCropTracking] = useState([]);
   const [todayTasks, setTodayTasks] = useState([]);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchUserData();
-    fetchCropTracking();
-    generateTodayTasks();
-  }, []);
+    if (user) {
+      fetchUserData();
+      fetchCropTracking();
+      generateTodayTasks();
+    }
+  }, [user]);
 
   const fetchUserData = async () => {
+    if (!user) return;
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-        
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', profileError);
+        setShowProfileSetup(true);
+      } else if (!profileData || !profileData.full_name) {
+        setShowProfileSetup(true);
+      } else {
         setProfile(profileData);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error in fetchUserData:', error);
     }
   };
 
   const fetchCropTracking = async () => {
+    if (!user) return;
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data } = await supabase
-          .from('crop_growth_tracking')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('last_updated', { ascending: false });
-        
-        setCropTracking(data || []);
-      }
+      const { data } = await supabase
+        .from('crop_growth_tracking')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('last_updated', { ascending: false });
+      
+      setCropTracking(data || []);
     } catch (error) {
       console.error('Error fetching crop tracking:', error);
     }
@@ -92,7 +103,35 @@ const Dashboard = () => {
   };
 
   const completedTasks = todayTasks.filter(task => task.completed).length;
-  const progressPercentage = (completedTasks / todayTasks.length) * 100;
+  const progressPercentage = todayTasks.length > 0 ? (completedTasks / todayTasks.length) * 100 : 0;
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Authentication check
+  if (!user) {
+    requireAuth();
+    return null;
+  }
+
+  // Show profile setup if needed
+  if (showProfileSetup) {
+    return (
+      <ProfileSetup 
+        user={user} 
+        onComplete={() => {
+          setShowProfileSetup(false);
+          fetchUserData();
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,9 +152,13 @@ const Dashboard = () => {
                 <Leaf className="w-4 h-4 mr-1" />
                 {cropTracking.length} Active Crops
               </Badge>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setShowProfileSetup(true)}>
                 <Settings className="w-4 h-4 mr-2" />
-                Settings
+                Profile
+              </Button>
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
               </Button>
             </div>
           </div>
@@ -300,17 +343,29 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate('/disease-detection')}
+                  >
                     <Camera className="w-4 h-4 mr-2" />
                     Disease Detection
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate('/crop-planner')}
+                  >
                     <Leaf className="w-4 h-4 mr-2" />
                     Crop Planner
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate('/soil-data')}
+                  >
                     <TrendingUp className="w-4 h-4 mr-2" />
-                    Growth Tracker
+                    Soil Data
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
                     <Users className="w-4 h-4 mr-2" />
