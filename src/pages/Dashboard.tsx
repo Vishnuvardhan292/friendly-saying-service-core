@@ -23,6 +23,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthProtection } from '@/hooks/useAuthProtection';
 import ProfileSetup from '@/components/ProfileSetup';
 
+import { useWeather } from '@/hooks/useWeather';
+import WeatherWidget from '@/components/WeatherWidget';
+
 const Dashboard = () => {
   const { user, loading, requireAuth, signOut } = useAuthProtection();
   const [profile, setProfile] = useState(null);
@@ -31,6 +34,10 @@ const Dashboard = () => {
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Get weather data based on user location
+  const userLocation = profile?.location || 'New Delhi, India';
+  const { weather, loading: weatherLoading, error: weatherError } = useWeather(userLocation);
 
   useEffect(() => {
     if (user) {
@@ -189,7 +196,14 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sky-foreground/80 text-sm">Weather</p>
-                      <p className="text-2xl font-bold">28°C</p>
+                      <p className="text-2xl font-bold">
+                        {weather ? `${weather.current.temperature}°C` : '--°C'}
+                      </p>
+                      {weather && (
+                        <p className="text-sky-foreground/70 text-xs capitalize">
+                          {weather.current.description}
+                        </p>
+                      )}
                     </div>
                     <CloudRain className="w-8 h-8 text-sky-foreground/80" />
                   </div>
@@ -302,39 +316,11 @@ const Dashboard = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Weather Widget */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CloudRain className="w-5 h-5 mr-2 text-sky" />
-                  Weather Today
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Thermometer className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Temperature</span>
-                    </div>
-                    <span className="font-semibold">28°C</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Droplets className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Humidity</span>
-                    </div>
-                    <span className="font-semibold">65%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <CloudRain className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Rain Chance</span>
-                    </div>
-                    <span className="font-semibold">20%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <WeatherWidget 
+              weather={weather} 
+              loading={weatherLoading} 
+              error={weatherError} 
+            />
 
             {/* Quick Actions */}
             <Card>
@@ -358,6 +344,14 @@ const Dashboard = () => {
                   >
                     <Leaf className="w-4 h-4 mr-2" />
                     Crop Planner
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate('/crop-calendar')}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Crop Calendar
                   </Button>
                   <Button 
                     variant="outline" 

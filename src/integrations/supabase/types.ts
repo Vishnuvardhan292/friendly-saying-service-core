@@ -205,6 +205,45 @@ export type Database = {
         }
         Relationships: []
       }
+      disease_detections: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          crop_type: string
+          detected_disease: string | null
+          id: string
+          image_url: string
+          symptoms: string | null
+          treatment_recommendation: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          crop_type: string
+          detected_disease?: string | null
+          id?: string
+          image_url: string
+          symptoms?: string | null
+          treatment_recommendation?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          crop_type?: string
+          detected_disease?: string | null
+          id?: string
+          image_url?: string
+          symptoms?: string | null
+          treatment_recommendation?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       farm_inventory: {
         Row: {
           condition: string | null

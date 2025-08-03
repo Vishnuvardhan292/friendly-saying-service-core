@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import { 
   Camera, 
   Upload, 
@@ -18,15 +18,25 @@ import {
   Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthProtection } from '@/hooks/useAuthProtection';
+import { supabase } from '@/integrations/supabase/client';
 
 const DiseaseDetection = () => {
+  const { user, requireAuth } = useAuthProtection();
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [cropType, setCropType] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
   const { toast } = useToast();
+
+  // Check authentication
+  if (!user) {
+    requireAuth();
+    return null;
+  }
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -41,60 +51,101 @@ const DiseaseDetection = () => {
   };
 
   const analyzeImage = async () => {
-    if (!selectedImage) {
+    if (!selectedImage || !cropType) {
       toast({
-        title: "No Image Selected",
-        description: "Please upload an image of your crop first.",
+        title: "Missing Information",
+        description: "Please upload an image and specify the crop type.",
         variant: "destructive",
       });
       return;
     }
 
     setIsAnalyzing(true);
-    
-    // Simulate AI analysis - in real implementation, you'd call your AI service
-    setTimeout(() => {
-      const mockResults = [
-        {
-          disease: "Tomato Late Blight",
-          confidence: 89,
-          severity: "High",
-          description: "A destructive disease caused by Phytophthora infestans affecting tomato plants.",
-          symptoms: [
-            "Dark, water-soaked spots on leaves",
-            "White moldy growth on undersides of leaves",
-            "Brown spots on fruits",
-            "Rapid plant wilting"
-          ],
-          causes: [
-            "High humidity",
-            "Cool temperatures (60-70°F)",
-            "Poor air circulation",
-            "Overhead watering"
-          ],
-          treatment: [
-            "Remove affected plant parts immediately",
-            "Apply copper-based fungicides",
-            "Improve air circulation",
-            "Avoid overhead watering"
-          ],
-          prevention: [
-            "Choose resistant varieties",
-            "Ensure proper spacing",
-            "Water at soil level",
-            "Apply preventive fungicide sprays"
-          ]
-        }
-      ];
+    setUploadProgress(0);
+
+    try {
+      // Upload image to Supabase Storage
+      const fileExt = selectedImage.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
-      setAnalysisResult(mockResults[0]);
-      setIsAnalyzing(false);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('crop-images')
+        .upload(fileName, selectedImage);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('crop-images')
+        .getPublicUrl(fileName);
+
+      // Simulate AI analysis (replace with actual AI service)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const mockResults = {
+        disease: "Leaf Blight",
+        confidence: 87.5,
+        severity: "Moderate",
+        description: "A common fungal disease affecting crop leaves and reducing yield.",
+        symptoms: [
+          "Brown spots on leaves with dark borders",
+          "Yellowing of affected areas",
+          "Wilting of leaf edges",
+          "Premature leaf drop"
+        ],
+        causes: [
+          "High humidity conditions",
+          "Poor air circulation",
+          "Overhead watering",
+          "Dense plant spacing"
+        ],
+        treatment: [
+          "Remove affected plant parts immediately",
+          "Apply copper-based fungicide spray",
+          "Improve air circulation around plants",
+          "Reduce watering frequency"
+        ],
+        prevention: [
+          "Ensure proper plant spacing",
+          "Water at soil level, not on leaves",
+          "Apply preventive fungicide treatments",
+          "Monitor plants regularly for early signs"
+        ]
+      };
+
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('disease_detections')
+        .insert({
+          user_id: user.id,
+          image_url: publicUrl,
+          crop_type: cropType,
+          detected_disease: mockResults.disease,
+          confidence_score: mockResults.confidence,
+          symptoms: mockResults.symptoms.join('; '),
+          treatment_recommendation: mockResults.treatment.join('; ')
+        });
+
+      if (dbError) throw dbError;
+
+      setAnalysisResult(mockResults);
       
       toast({
         title: "Analysis Complete",
         description: "Disease detection completed successfully.",
       });
-    }, 3000);
+
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze image.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+      setUploadProgress(0);
+    }
   };
 
   const commonDiseases = [
@@ -208,7 +259,7 @@ const DiseaseDetection = () => {
 
                 <Button 
                   onClick={analyzeImage}
-                  disabled={!selectedImage || isAnalyzing}
+                  disabled={!selectedImage || !cropType || isAnalyzing}
                   className="w-full"
                   variant="hero"
                 >
@@ -224,6 +275,17 @@ const DiseaseDetection = () => {
                     </>
                   )}
                 </Button>
+
+                {/* Upload Progress */}
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Uploading...</span>
+                      <span>{Math.round(uploadProgress)}%</span>
+                    </div>
+                    <Progress value={uploadProgress} />
+                  </div>
+                )}
               </CardContent>
             </Card>
 
