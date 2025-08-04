@@ -1,9 +1,18 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Leaf, Menu, X } from 'lucide-react';
+import { Leaf, Menu, X, User, LogOut } from 'lucide-react';
+import { useAuthProtection } from '@/hooks/useAuthProtection';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const { user, signOut, loading } = useAuthProtection();
 
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
@@ -38,8 +47,34 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => window.location.href = '/auth'}>Sign In</Button>
-            <Button variant="hero" onClick={() => window.location.href = '/auth'}>Get Started</Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2">
+                    <User className="w-4 h-4" />
+                    <span>{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => window.location.href = '/dashboard'}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => window.location.href = '/auth'}>Sign In</Button>
+                <Button variant="hero" onClick={() => window.location.href = '/auth'}>Get Started</Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -91,8 +126,17 @@ const Header = () => {
                 Contact
               </a>
               <div className="flex flex-col space-y-2 pt-4">
-                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/auth'}>Sign In</Button>
-                <Button variant="hero" size="sm" onClick={() => window.location.href = '/auth'}>Get Started</Button>
+                {user ? (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => window.location.href = '/dashboard'}>Dashboard</Button>
+                    <Button variant="outline" size="sm" onClick={signOut}>Sign Out</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => window.location.href = '/auth'}>Sign In</Button>
+                    <Button variant="hero" size="sm" onClick={() => window.location.href = '/auth'}>Get Started</Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
