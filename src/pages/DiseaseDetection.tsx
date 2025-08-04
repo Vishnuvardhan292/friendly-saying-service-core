@@ -79,39 +79,38 @@ const DiseaseDetection = () => {
         .from('crop-images')
         .getPublicUrl(fileName);
 
-      // Simulate AI analysis (replace with actual AI service)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call AI analysis edge function
+      setUploadProgress(50);
+      
+      const { data: analysisData, error: analysisError } = await supabase.functions
+        .invoke('analyze-disease', {
+          body: {
+            imageUrl: publicUrl,
+            cropType: cropType
+          }
+        });
 
-      const mockResults = {
-        disease: "Leaf Blight",
-        confidence: 87.5,
-        severity: "Moderate",
-        description: "A common fungal disease affecting crop leaves and reducing yield.",
-        symptoms: [
-          "Brown spots on leaves with dark borders",
-          "Yellowing of affected areas",
-          "Wilting of leaf edges",
-          "Premature leaf drop"
-        ],
-        causes: [
-          "High humidity conditions",
-          "Poor air circulation",
-          "Overhead watering",
-          "Dense plant spacing"
-        ],
-        treatment: [
-          "Remove affected plant parts immediately",
-          "Apply copper-based fungicide spray",
-          "Improve air circulation around plants",
-          "Reduce watering frequency"
-        ],
-        prevention: [
-          "Ensure proper plant spacing",
-          "Water at soil level, not on leaves",
-          "Apply preventive fungicide treatments",
-          "Monitor plants regularly for early signs"
-        ]
+      if (analysisError) throw analysisError;
+
+      setUploadProgress(75);
+
+      const aiResults = {
+        disease: analysisData.detectedDisease || "Unknown",
+        confidence: analysisData.confidenceScore || 0,
+        severity: analysisData.confidenceScore > 80 ? "High" : 
+                 analysisData.confidenceScore > 60 ? "Moderate" : "Low",
+        description: analysisData.symptoms || "Analysis completed",
+        symptoms: analysisData.symptoms ? analysisData.symptoms.split('. ').filter(s => s.length > 0) : ["No symptoms detected"],
+        causes: ["Based on AI analysis"],
+        treatment: analysisData.treatmentRecommendation ? 
+                  analysisData.treatmentRecommendation.split('. ').filter(t => t.length > 0) : 
+                  ["Consult with agricultural expert"],
+        prevention: analysisData.preventionMethods ? 
+                   analysisData.preventionMethods.split('. ').filter(p => p.length > 0) : 
+                   ["Follow standard prevention practices"]
       };
+
+      setUploadProgress(100);
 
       // Save to database
       const { error: dbError } = await supabase
@@ -120,15 +119,15 @@ const DiseaseDetection = () => {
           user_id: user.id,
           image_url: publicUrl,
           crop_type: cropType,
-          detected_disease: mockResults.disease,
-          confidence_score: mockResults.confidence,
-          symptoms: mockResults.symptoms.join('; '),
-          treatment_recommendation: mockResults.treatment.join('; ')
+          detected_disease: aiResults.disease,
+          confidence_score: aiResults.confidence,
+          symptoms: aiResults.symptoms.join('; '),
+          treatment_recommendation: aiResults.treatment.join('; ')
         });
 
       if (dbError) throw dbError;
 
-      setAnalysisResult(mockResults);
+      setAnalysisResult(aiResults);
       
       toast({
         title: "Analysis Complete",
