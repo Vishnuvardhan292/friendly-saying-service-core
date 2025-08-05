@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Leaf, Mail, Lock, User, Phone, MapPin, Tractor } from 'lucide-react';
+import { Leaf, Mail, Lock, User, Phone, MapPin, Tractor, Chrome } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -169,6 +169,37 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (error) {
+        console.error('Google OAuth error:', error);
+        toast({
+          title: "Google Sign In Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
+      // Note: Loading state will be cleared by auth state change
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      toast({
+        title: "Google Sign In Failed", 
+        description: "Unable to sign in with Google. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
+
   const soilTypes = [
     'Clay', 'Sandy', 'Loam', 'Silt', 'Peat', 'Chalk', 'Red Soil', 'Black Soil', 'Alluvial', 'Other'
   ];
@@ -245,6 +276,26 @@ const Auth = () => {
                     ) : (
                       'Sign In'
                     )}
+                  </Button>
+
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                  >
+                    <Chrome className="w-4 h-4 mr-2" />
+                    Sign in with Google
                   </Button>
 
                   <div className="text-center mt-4">
@@ -410,6 +461,26 @@ const Auth = () => {
                     ) : (
                       'Create Account'
                     )}
+                  </Button>
+
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                  >
+                    <Chrome className="w-4 h-4 mr-2" />
+                    Sign up with Google
                   </Button>
                 </form>
               </TabsContent>
