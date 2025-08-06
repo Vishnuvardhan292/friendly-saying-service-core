@@ -205,6 +205,57 @@ export type Database = {
         }
         Relationships: []
       }
+      crops: {
+        Row: {
+          area_planted: number | null
+          category: string
+          created_at: string
+          expected_harvest_date: string | null
+          field_location: string | null
+          growth_stage: string | null
+          id: string
+          name: string
+          notes: string | null
+          planting_date: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+          variety: string | null
+        }
+        Insert: {
+          area_planted?: number | null
+          category: string
+          created_at?: string
+          expected_harvest_date?: string | null
+          field_location?: string | null
+          growth_stage?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          planting_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          variety?: string | null
+        }
+        Update: {
+          area_planted?: number | null
+          category?: string
+          created_at?: string
+          expected_harvest_date?: string | null
+          field_location?: string | null
+          growth_stage?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          planting_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          variety?: string | null
+        }
+        Relationships: []
+      }
       disease_detections: {
         Row: {
           confidence_score: number | null

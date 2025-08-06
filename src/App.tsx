@@ -7,6 +7,7 @@ import { ErrorBoundary, NetworkStatus } from "@/components/ErrorHandling";
 import Index from "./pages/Index";
 import CropPlanner from "./pages/CropPlanner";
 import CropCalendar from "./pages/CropCalendar";
+import CropManagement from "./pages/CropManagement";
 import Dashboard from "./pages/Dashboard";
 import DiseaseDetection from "./pages/DiseaseDetection";
 import SoilData from "./pages/SoilData";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/crop-planner" element={<ProtectedRoute><CropPlanner /></ProtectedRoute>} />
           <Route path="/crop-calendar" element={<ProtectedRoute><CropCalendar /></ProtectedRoute>} />
+          <Route path="/crop-management" element={<ProtectedRoute><CropManagement /></ProtectedRoute>} />
           <Route path="/soil-data" element={<ProtectedRoute><SoilData /></ProtectedRoute>} />
           <Route path="/disease-detection" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} />
           <Route path="/data-export" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />

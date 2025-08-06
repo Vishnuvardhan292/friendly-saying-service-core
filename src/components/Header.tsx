@@ -38,6 +38,9 @@ const Header = () => {
             <a href="/crop-planner" className="text-foreground hover:text-primary transition-colors">
               Crop Planner
             </a>
+            <a href="/crop-management" className="text-foreground hover:text-primary transition-colors">
+              My Crops
+            </a>
             <a href="#features" className="text-foreground hover:text-primary transition-colors">
               Features
             </a>
@@ -114,6 +117,13 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Crop Planner
+              </a>
+              <a 
+                href="/crop-management" 
+                className="text-foreground hover:text-primary transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                My Crops
               </a>
               <a 
                 href="#features" 
