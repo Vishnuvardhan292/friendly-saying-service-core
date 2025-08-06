@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Leaf, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuthProtection } from '@/hooks/useAuthProtection';
+import NotificationCenter from '@/components/NotificationCenter';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -48,27 +49,30 @@ const Header = () => {
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <User className="w-4 h-4" />
-                    <span>{user.email}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => window.location.href = '/dashboard'}>
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                <NotificationCenter />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2">
+                      <User className="w-4 h-4" />
+                      <span>{user.email}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => window.location.href = '/dashboard'}>
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut} className="text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <>
                 <Button variant="ghost" onClick={() => window.location.href = '/auth'}>Sign In</Button>
