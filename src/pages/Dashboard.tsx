@@ -15,21 +15,41 @@ import {
   AlertTriangle,
   CheckCircle,
   Users,
-  LogOut
+  LogOut,
+  MapPin,
+  BarChart3,
+  Clock,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuthProtection } from '@/hooks/useAuthProtection';
 import ProfileSetup from '@/components/ProfileSetup';
+import Header from '@/components/Header';
 
 import { useWeather } from '@/hooks/useWeather';
 import WeatherWidget from '@/components/WeatherWidget';
 
+interface Crop {
+  id: string;
+  name: string;
+  variety: string;
+  category: string;
+  planting_date: string;
+  expected_harvest_date: string;
+  growth_stage: string;
+  field_location: string;
+  area_planted: number;
+  notes: string;
+  status: string;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const { user, loading, requireAuth, signOut } = useAuthProtection();
   const [profile, setProfile] = useState(null);
-  const [cropTracking, setCropTracking] = useState([]);
+  const [crops, setCrops] = useState<Crop[]>([]);
   const [todayTasks, setTodayTasks] = useState([]);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const { toast } = useToast();
@@ -42,7 +62,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchUserData();
-      fetchCropTracking();
+      fetchCrops();
       generateTodayTasks();
     }
   }, [user]);
@@ -70,31 +90,39 @@ const Dashboard = () => {
     }
   };
 
-  const fetchCropTracking = async () => {
+  const fetchCrops = async () => {
     if (!user) return;
     
     try {
       const { data } = await supabase
-        .from('crop_growth_tracking')
+        .from('crops')
         .select('*')
         .eq('user_id', user.id)
-        .order('last_updated', { ascending: false });
+        .order('created_at', { ascending: false });
       
-      setCropTracking(data || []);
+      setCrops(data || []);
     } catch (error) {
-      console.error('Error fetching crop tracking:', error);
+      console.error('Error fetching crops:', error);
     }
   };
 
   const generateTodayTasks = () => {
-    const tasks = [
+    const baseTasks = [
       { id: 1, task: 'Check soil moisture levels', priority: 'High', completed: false },
       { id: 2, task: 'Monitor for pest activity', priority: 'Medium', completed: true },
-      { id: 3, task: 'Apply organic fertilizer to tomato plots', priority: 'High', completed: false },
-      { id: 4, task: 'Prune excess branches', priority: 'Low', completed: false },
-      { id: 5, task: 'Record growth measurements', priority: 'Medium', completed: false },
+      { id: 3, task: 'Record growth measurements', priority: 'Medium', completed: false },
     ];
-    setTodayTasks(tasks);
+
+    // Generate crop-specific tasks
+    const cropTasks = crops.slice(0, 3).map((crop, index) => ({
+      id: baseTasks.length + index + 1,
+      task: `Water ${crop.name} in ${crop.field_location || 'field'}`,
+      priority: 'High',
+      completed: false,
+      cropId: crop.id
+    }));
+
+    setTodayTasks([...baseTasks, ...cropTasks]);
   };
 
   const toggleTask = (taskId) => {
@@ -108,6 +136,33 @@ const Dashboard = () => {
       description: "Task status has been updated successfully.",
     });
   };
+
+  // Generate tasks when crops change
+  useEffect(() => {
+    if (crops.length > 0) {
+      generateTodayTasks();
+    }
+  }, [crops]);
+
+  // Calculate crop statistics
+  const cropStats = {
+    total: crops.length,
+    active: crops.filter(crop => crop.status === 'active').length,
+    harvested: crops.filter(crop => crop.status === 'harvested').length,
+    growing: crops.filter(crop => crop.growth_stage === 'growing').length,
+    mature: crops.filter(crop => crop.growth_stage === 'mature').length,
+    categories: [...new Set(crops.map(crop => crop.category))].length,
+    totalArea: crops.reduce((sum, crop) => sum + (crop.area_planted || 0), 0)
+  };
+
+  // Get crops that need harvest soon (within 30 days)
+  const upcomingHarvests = crops.filter(crop => {
+    if (!crop.expected_harvest_date) return false;
+    const harvestDate = new Date(crop.expected_harvest_date);
+    const now = new Date();
+    const daysUntilHarvest = Math.ceil((harvestDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilHarvest <= 30 && daysUntilHarvest > 0;
+  });
 
   const completedTasks = todayTasks.filter(task => task.completed).length;
   const progressPercentage = todayTasks.length > 0 ? (completedTasks / todayTasks.length) * 100 : 0;
@@ -142,82 +197,70 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Welcome back, {profile?.full_name || 'Farmer'}!
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Here's your farming dashboard for today
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="text-success">
-                <Leaf className="w-4 h-4 mr-1" />
-                {cropTracking.length} Active Crops
-              </Badge>
-              <Button variant="outline" size="sm" onClick={() => setShowProfileSetup(true)}>
-                <Settings className="w-4 h-4 mr-2" />
-                Profile
-              </Button>
-              <Button variant="outline" size="sm" onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Header />
 
       <div className="container mx-auto px-4 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Welcome back, {profile?.full_name || 'Farmer'}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here's your farming dashboard overview for today
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-primary text-primary-foreground">
-                <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-primary-foreground/80 text-sm">Today's Tasks</p>
-                      <p className="text-2xl font-bold">{completedTasks}/{todayTasks.length}</p>
+                      <p className="text-primary-foreground/80 text-sm">Total Crops</p>
+                      <p className="text-2xl font-bold">{cropStats.total}</p>
                     </div>
-                    <Calendar className="w-8 h-8 text-primary-foreground/80" />
+                    <Leaf className="w-8 h-8 text-primary-foreground/80" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-sky text-sky-foreground">
-                <CardContent className="p-6">
+              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sky-foreground/80 text-sm">Weather</p>
-                      <p className="text-2xl font-bold">
-                        {weather ? `${weather.current.temperature}°C` : '--°C'}
-                      </p>
-                      {weather && (
-                        <p className="text-sky-foreground/70 text-xs capitalize">
-                          {weather.current.description}
-                        </p>
-                      )}
+                      <p className="text-white/80 text-sm">Active</p>
+                      <p className="text-2xl font-bold">{cropStats.active}</p>
                     </div>
-                    <CloudRain className="w-8 h-8 text-sky-foreground/80" />
+                    <TrendingUp className="w-8 h-8 text-white/80" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-earth text-earth-foreground">
-                <CardContent className="p-6">
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-earth-foreground/80 text-sm">Soil Health</p>
-                      <p className="text-2xl font-bold">Excellent</p>
+                      <p className="text-white/80 text-sm">Farm Size</p>
+                      <p className="text-2xl font-bold">{cropStats.totalArea.toFixed(1)}</p>
+                      <p className="text-white/70 text-xs">acres</p>
                     </div>
-                    <TrendingUp className="w-8 h-8 text-earth-foreground/80" />
+                    <MapPin className="w-8 h-8 text-white/80" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white/80 text-sm">Categories</p>
+                      <p className="text-2xl font-bold">{cropStats.categories}</p>
+                    </div>
+                    <BarChart3 className="w-8 h-8 text-white/80" />
                   </div>
                 </CardContent>
               </Card>
@@ -238,74 +281,117 @@ const Dashboard = () => {
                 <Progress value={progressPercentage} className="mt-2" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {todayTasks.map((task) => (
-                    <div 
-                      key={task.id}
-                      className={`flex items-center space-x-4 p-4 rounded-lg border ${
-                        task.completed ? 'bg-success/5 border-success/20' : 'bg-card'
-                      }`}
-                    >
-                      <button
-                        onClick={() => toggleTask(task.id)}
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          task.completed 
-                            ? 'bg-success border-success text-success-foreground' 
-                            : 'border-muted-foreground hover:border-primary'
+                {todayTasks.length > 0 ? (
+                  <div className="space-y-4">
+                    {todayTasks.map((task) => (
+                      <div 
+                        key={task.id}
+                        className={`flex items-center space-x-4 p-4 rounded-lg border transition-colors ${
+                          task.completed ? 'bg-success/5 border-success/20' : 'bg-card hover:bg-muted/50'
                         }`}
                       >
-                        {task.completed && <CheckCircle className="w-3 h-3" />}
-                      </button>
-                      <div className="flex-1">
-                        <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                          {task.task}
-                        </p>
+                        <button
+                          onClick={() => toggleTask(task.id)}
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            task.completed 
+                              ? 'bg-success border-success text-success-foreground' 
+                              : 'border-muted-foreground hover:border-primary'
+                          }`}
+                        >
+                          {task.completed && <CheckCircle className="w-3 h-3" />}
+                        </button>
+                        <div className="flex-1">
+                          <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                            {task.task}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={task.priority === 'High' ? 'destructive' : task.priority === 'Medium' ? 'default' : 'secondary'}
+                        >
+                          {task.priority}
+                        </Badge>
                       </div>
-                      <Badge 
-                        variant={task.priority === 'High' ? 'destructive' : task.priority === 'Medium' ? 'default' : 'secondary'}
-                      >
-                        {task.priority}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No tasks for today</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
 
             {/* Active Crops */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Leaf className="w-5 h-5 mr-2 text-success" />
-                  Active Crops
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <Leaf className="w-5 h-5 mr-2 text-success" />
+                    Your Crops
+                  </CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/crop-management')}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Crop
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {cropTracking.length > 0 ? (
+                {crops.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {cropTracking.slice(0, 4).map((crop) => (
-                      <div key={crop.id} className="p-4 border rounded-lg">
+                    {crops.slice(0, 4).map((crop) => (
+                      <div key={crop.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-foreground">{crop.crop_name}</h4>
-                          <Badge variant={crop.health_status === 'Healthy' ? 'default' : 'destructive'}>
-                            {crop.health_status}
+                          <h4 className="font-semibold text-foreground">{crop.name}</h4>
+                          <Badge variant={crop.status === 'active' ? 'default' : crop.status === 'harvested' ? 'secondary' : 'destructive'}>
+                            {crop.status}
                           </Badge>
                         </div>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {crop.variety} • {crop.category}
+                        </p>
                         <p className="text-sm text-muted-foreground mb-2">
-                          Stage: {crop.current_growth_stage}
+                          Stage: {crop.growth_stage}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          Planted: {new Date(crop.planting_date).toLocaleDateString()}
-                        </p>
+                        {crop.field_location && (
+                          <p className="text-sm text-muted-foreground mb-2 flex items-center">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {crop.field_location}
+                          </p>
+                        )}
+                        {crop.planting_date && (
+                          <p className="text-sm text-muted-foreground">
+                            Planted: {new Date(crop.planting_date).toLocaleDateString()}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <Leaf className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No active crops. Start your first crop plan!</p>
-                    <Button className="mt-4" variant="outline">
-                      Add New Crop
+                    <p className="text-muted-foreground mb-4">No crops yet. Start your farming journey!</p>
+                    <Button 
+                      onClick={() => navigate('/crop-management')}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Crop
+                    </Button>
+                  </div>
+                )}
+                {crops.length > 4 && (
+                  <div className="mt-4 text-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate('/crop-management')}
+                    >
+                      View All Crops ({crops.length})
                     </Button>
                   </div>
                 )}
@@ -340,10 +426,10 @@ const Dashboard = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
-                    onClick={() => navigate('/crop-planner')}
+                    onClick={() => navigate('/crop-management')}
                   >
                     <Leaf className="w-4 h-4 mr-2" />
-                    Crop Planner
+                    Manage Crops
                   </Button>
                   <Button 
                     variant="outline" 
@@ -369,27 +455,66 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Alerts */}
+            {/* Upcoming Harvests */}
+            {upcomingHarvests.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-orange-600">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Upcoming Harvests
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {upcomingHarvests.slice(0, 3).map((crop) => {
+                      const harvestDate = new Date(crop.expected_harvest_date);
+                      const daysUntil = Math.ceil((harvestDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                      return (
+                        <div key={crop.id} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-orange-800">{crop.name}</p>
+                              <p className="text-sm text-orange-600">
+                                {daysUntil} days until harvest
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="text-orange-600 border-orange-300">
+                              {harvestDate.toLocaleDateString()}
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Farm Stats */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-destructive">
-                  <AlertTriangle className="w-5 h-5 mr-2" />
-                  Alerts
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="w-5 h-5 mr-2" />
+                  Farm Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <p className="text-sm font-medium text-destructive">Pest Alert</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Aphids detected in tomato field. Check immediately.
-                    </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <p className="text-2xl font-bold text-primary">{cropStats.growing}</p>
+                    <p className="text-sm text-muted-foreground">Growing</p>
                   </div>
-                  <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
-                    <p className="text-sm font-medium text-accent">Weather Warning</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Heavy rain expected tomorrow. Prepare drainage.
-                    </p>
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <p className="text-2xl font-bold text-orange-600">{cropStats.mature}</p>
+                    <p className="text-sm text-muted-foreground">Mature</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <p className="text-2xl font-bold text-green-600">{cropStats.harvested}</p>
+                    <p className="text-sm text-muted-foreground">Harvested</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <p className="text-2xl font-bold text-blue-600">{cropStats.totalArea.toFixed(1)}</p>
+                    <p className="text-sm text-muted-foreground">Total Acres</p>
                   </div>
                 </div>
               </CardContent>
