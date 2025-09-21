@@ -19,7 +19,11 @@ import {
   MapPin,
   BarChart3,
   Clock,
-  Plus
+  Plus,
+  Lightbulb,
+  Target,
+  ArrowRight,
+  Beaker
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -46,11 +50,37 @@ interface Crop {
   created_at: string;
 }
 
+interface SoilData {
+  id: number;
+  ph_level: number;
+  organic_matter_percentage: number;
+  nitrogen_level: number;
+  phosphorus_level: number;
+  potassium_level: number;
+  soil_type: string;
+  location: string;
+  test_date: string;
+}
+
+interface CropRecommendation {
+  name: string;
+  suitability_score: number;
+  reasons: string[];
+  planting_season: string;
+  cultivation_plan: {
+    week: number;
+    activity: string;
+    description: string;
+  }[];
+}
+
 const Dashboard = () => {
   const { user, loading, requireAuth, signOut } = useAuthProtection();
   const [profile, setProfile] = useState(null);
   const [crops, setCrops] = useState<Crop[]>([]);
   const [todayTasks, setTodayTasks] = useState([]);
+  const [soilData, setSoilData] = useState<SoilData | null>(null);
+  const [cropRecommendations, setCropRecommendations] = useState<CropRecommendation[]>([]);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -63,6 +93,7 @@ const Dashboard = () => {
     if (user) {
       fetchUserData();
       fetchCrops();
+      fetchLatestSoilData();
       generateTodayTasks();
     }
   }, [user]);
@@ -104,6 +135,103 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error fetching crops:', error);
     }
+  };
+
+  const fetchLatestSoilData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data } = await supabase
+        .from('soil_tests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('test_date', { ascending: false })
+        .limit(1);
+      
+      if (data && data.length > 0) {
+        setSoilData(data[0]);
+        analyzeSoilAndRecommendCrops(data[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching soil data:', error);
+    }
+  };
+
+  const analyzeSoilAndRecommendCrops = (soil: SoilData) => {
+    const recommendations: CropRecommendation[] = [];
+    
+    // Rice - suitable for pH 5.5-6.5, high water retention
+    if (soil.ph_level >= 5.5 && soil.ph_level <= 6.5 && soil.soil_type.toLowerCase().includes('clay')) {
+      recommendations.push({
+        name: 'Rice',
+        suitability_score: 85,
+        reasons: [
+          `pH ${soil.ph_level} is ideal for rice cultivation`,
+          `${soil.soil_type} soil provides good water retention`,
+          `Nitrogen level ${soil.nitrogen_level} supports leafy growth`
+        ],
+        planting_season: 'Kharif (June-July)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Plow and level the field, prepare seedbed' },
+          { week: 2, activity: 'Seedling Preparation', description: 'Prepare nursery and sow seeds' },
+          { week: 4, activity: 'Transplanting', description: 'Transplant 25-30 day old seedlings' },
+          { week: 8, activity: 'First Fertilizer', description: 'Apply nitrogen-rich fertilizer' },
+          { week: 12, activity: 'Panicle Initiation', description: 'Monitor for flowering stage' },
+          { week: 16, activity: 'Harvest', description: 'Harvest when grains are golden yellow' }
+        ]
+      });
+    }
+
+    // Wheat - suitable for pH 6.0-7.5, moderate nitrogen
+    if (soil.ph_level >= 6.0 && soil.ph_level <= 7.5 && soil.nitrogen_level >= 40) {
+      recommendations.push({
+        name: 'Wheat',
+        suitability_score: 90,
+        reasons: [
+          `pH ${soil.ph_level} is perfect for wheat`,
+          `Nitrogen level ${soil.nitrogen_level} supports grain development`,
+          `Phosphorus ${soil.phosphorus_level} aids root development`
+        ],
+        planting_season: 'Rabi (November-December)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Deep plowing and soil preparation' },
+          { week: 2, activity: 'Sowing', description: 'Sow seeds with proper spacing' },
+          { week: 4, activity: 'First Irrigation', description: 'Crown root irrigation' },
+          { week: 8, activity: 'Fertilizer Application', description: 'Apply NPK fertilizer' },
+          { week: 12, activity: 'Flowering Stage', description: 'Monitor for ear emergence' },
+          { week: 18, activity: 'Harvest', description: 'Harvest when grains are fully mature' }
+        ]
+      });
+    }
+
+    // Tomato - suitable for pH 6.0-6.8, well-drained soil
+    if (soil.ph_level >= 6.0 && soil.ph_level <= 6.8 && soil.organic_matter_percentage >= 2) {
+      recommendations.push({
+        name: 'Tomato',
+        suitability_score: 88,
+        reasons: [
+          `pH ${soil.ph_level} is ideal for tomato cultivation`,
+          `Organic matter ${soil.organic_matter_percentage}% provides good nutrition`,
+          `Potassium level ${soil.potassium_level} supports fruit development`
+        ],
+        planting_season: 'Year-round with protection',
+        cultivation_plan: [
+          { week: 1, activity: 'Seed Sowing', description: 'Sow seeds in nursery beds' },
+          { week: 4, activity: 'Transplanting', description: 'Transplant seedlings to main field' },
+          { week: 6, activity: 'Staking', description: 'Provide support stakes for plants' },
+          { week: 8, activity: 'First Fertilizer', description: 'Apply balanced NPK fertilizer' },
+          { week: 10, activity: 'Flowering', description: 'Monitor for first flower clusters' },
+          { week: 14, activity: 'Harvest', description: 'Start harvesting mature fruits' }
+        ]
+      });
+    }
+
+    // Sort by suitability score and take top 3
+    const topRecommendations = recommendations
+      .sort((a, b) => b.suitability_score - a.suitability_score)
+      .slice(0, 3);
+    
+    setCropRecommendations(topRecommendations);
   };
 
   const generateTodayTasks = () => {
@@ -323,7 +451,127 @@ const Dashboard = () => {
             </Card>
 
 
-            {/* Active Crops */}
+            {/* Soil-Based Crop Recommendations */}
+            {soilData && cropRecommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center">
+                      <Beaker className="w-5 h-5 mr-2 text-blue-600" />
+                      Soil-Based Crop Recommendations
+                    </CardTitle>
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                      Based on latest soil test
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Recommendations based on pH {soilData.ph_level}, {soilData.soil_type} soil from {soilData.location}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {cropRecommendations.map((rec, index) => (
+                      <div key={rec.name} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-foreground flex items-center">
+                            <Target className="w-4 h-4 mr-2 text-green-600" />
+                            {rec.name}
+                          </h4>
+                          <div className="flex items-center">
+                            <Badge variant="outline" className="text-green-600 border-green-300">
+                              {rec.suitability_score}% match
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground mb-3">
+                          <strong>Season:</strong> {rec.planting_season}
+                        </p>
+                        
+                        <div className="space-y-1 mb-4">
+                          <p className="text-sm font-medium text-foreground">Why it's suitable:</p>
+                          {rec.reasons.slice(0, 2).map((reason, idx) => (
+                            <p key={idx} className="text-xs text-muted-foreground flex items-start">
+                              <CheckCircle className="w-3 h-3 mr-1 text-green-500 flex-shrink-0 mt-0.5" />
+                              {reason}
+                            </p>
+                          ))}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            navigate('/crop-planner', { 
+                              state: { 
+                                recommendedCrop: rec.name,
+                                cultivationPlan: rec.cultivation_plan,
+                                soilData: soilData
+                              } 
+                            });
+                          }}
+                        >
+                          <Lightbulb className="w-4 h-4 mr-2" />
+                          View Crop Plan
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Beaker className="w-4 h-4 mr-2" />
+                      Last soil test: {new Date(soilData.test_date).toLocaleDateString()}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/soil-data')}
+                      >
+                        View Soil Data
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => navigate('/crop-management')}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        Add to My Crops
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* No Soil Data Message */}
+            {!soilData && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Beaker className="w-5 h-5 mr-2 text-blue-600" />
+                    Get Personalized Crop Recommendations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Beaker className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">
+                      No soil test data found. Add your soil analysis to get personalized crop recommendations.
+                    </p>
+                    <Button 
+                      onClick={() => navigate('/soil-data')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Soil Test Data
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
