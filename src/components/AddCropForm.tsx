@@ -9,11 +9,46 @@ import { X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthProtection } from '@/hooks/useAuthProtection';
 import { toast } from 'sonner';
+import { z } from 'zod';
+import { sanitizeForDisplay, containsXSS } from '@/lib/security';
 
 interface AddCropFormProps {
   onClose: () => void;
   onSuccess: () => void;
 }
+
+// Enhanced validation schema with security checks
+const cropFormSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(1, 'Crop name is required')
+    .max(100, 'Crop name must be less than 100 characters')
+    .refine(val => !containsXSS(val), 'Invalid characters detected'),
+  variety: z.string()
+    .trim()
+    .max(100, 'Variety must be less than 100 characters')
+    .refine(val => !containsXSS(val), 'Invalid characters detected')
+    .optional(),
+  category: z.string()
+    .min(1, 'Category is required'),
+  planting_date: z.string().optional(),
+  expected_harvest_date: z.string().optional(),
+  growth_stage: z.string(),
+  field_location: z.string()
+    .trim()
+    .max(200, 'Location must be less than 200 characters')
+    .refine(val => !containsXSS(val), 'Invalid characters detected')
+    .optional(),
+  area_planted: z.string()
+    .refine(val => !val || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), 'Area must be a positive number')
+    .optional(),
+  notes: z.string()
+    .trim()
+    .max(1000, 'Notes must be less than 1000 characters')
+    .refine(val => !containsXSS(val), 'Invalid characters detected')
+    .optional(),
+  status: z.string()
+});
 
 const AddCropForm: React.FC<AddCropFormProps> = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -57,12 +92,30 @@ const AddCropForm: React.FC<AddCropFormProps> = ({ onClose, onSuccess }) => {
 
     setLoading(true);
     try {
+      // Validate and sanitize form data
+      const validatedData = cropFormSchema.parse(formData);
+      
+      // Additional security: sanitize text fields
+      const sanitizedData = {
+        ...validatedData,
+        name: sanitizeForDisplay(validatedData.name),
+        variety: validatedData.variety ? sanitizeForDisplay(validatedData.variety) : '',
+        field_location: validatedData.field_location ? sanitizeForDisplay(validatedData.field_location) : '',
+        notes: validatedData.notes ? sanitizeForDisplay(validatedData.notes) : '',
+      };
+
       const cropData = {
-        ...formData,
-        user_id: user.id,
-        area_planted: formData.area_planted ? parseFloat(formData.area_planted) : null,
-        planting_date: formData.planting_date || null,
-        expected_harvest_date: formData.expected_harvest_date || null
+        name: sanitizedData.name,
+        variety: sanitizedData.variety || null,
+        category: sanitizedData.category,
+        planting_date: sanitizedData.planting_date || null,
+        expected_harvest_date: sanitizedData.expected_harvest_date || null,
+        growth_stage: sanitizedData.growth_stage,
+        field_location: sanitizedData.field_location || null,
+        area_planted: sanitizedData.area_planted ? parseFloat(sanitizedData.area_planted) : null,
+        notes: sanitizedData.notes || null,
+        status: sanitizedData.status,
+        user_id: user.id
       };
 
       const { error } = await supabase
@@ -74,7 +127,12 @@ const AddCropForm: React.FC<AddCropFormProps> = ({ onClose, onSuccess }) => {
       toast.success('Crop added successfully!');
       onSuccess();
     } catch (error: any) {
-      toast.error('Failed to add crop: ' + error.message);
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        toast.error(`Validation error: ${firstError.message}`);
+      } else {
+        toast.error('Failed to add crop. Please check your input and try again.');
+      }
     } finally {
       setLoading(false);
     }

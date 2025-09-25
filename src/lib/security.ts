@@ -1,11 +1,20 @@
 // Security utility functions
 
-// Rate limiting helper (simple in-memory implementation)
+// Enhanced rate limiting helper with memory cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 export const checkRateLimit = (identifier: string, maxRequests = 10, windowMs = 60000): boolean => {
   const now = Date.now();
   const userLimit = rateLimitMap.get(identifier);
+
+  // Clean up expired entries periodically
+  if (rateLimitMap.size > 1000) {
+    for (const [key, value] of rateLimitMap.entries()) {
+      if (now > value.resetTime) {
+        rateLimitMap.delete(key);
+      }
+    }
+  }
 
   if (!userLimit || now > userLimit.resetTime) {
     // Reset or create new limit

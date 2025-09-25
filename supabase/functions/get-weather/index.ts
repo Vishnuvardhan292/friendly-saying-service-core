@@ -77,7 +77,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Weather API Error:', error)
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch weather data', details: error.message }),
+      JSON.stringify({ error: 'Failed to fetch weather data', details: (error as any).message || 'Unknown error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

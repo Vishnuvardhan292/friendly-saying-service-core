@@ -13,10 +13,28 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id, location } = await req.json();
+    const body = await req.json();
+    
+    // Input validation and sanitization
+    if (!body || typeof body !== 'object') {
+      throw new Error('Invalid request body');
+    }
 
-    if (!user_id) {
-      throw new Error('User ID is required');
+    const { user_id, location } = body;
+
+    // Validate user_id
+    if (!user_id || typeof user_id !== 'string' || user_id.length < 1 || user_id.length > 100) {
+      throw new Error('Valid user ID is required');
+    }
+
+    // Validate and sanitize location if provided
+    if (location && (typeof location !== 'string' || location.length > 200)) {
+      throw new Error('Location must be a valid string under 200 characters');
+    }
+
+    // Basic XSS prevention for location input
+    if (location && /<script|javascript:|on\w+=/i.test(location)) {
+      throw new Error('Invalid location format');
     }
 
     const OPENWEATHER_API_KEY = Deno.env.get('OPENWEATHER_API_KEY');
@@ -28,13 +46,26 @@ serve(async (req) => {
       throw new Error('Missing required environment variables');
     }
 
-    // Default to a sample location if none provided
-    const weatherLocation = location || 'London,UK';
+    // Default to a sample location if none provided, with additional sanitization
+    const weatherLocation = (location && location.trim()) || 'London,UK';
+    
+    // Additional validation for weather API call
+    if (weatherLocation.length > 100) {
+      throw new Error('Location name too long');
+    }
 
-    // Get weather data from OpenWeatherMap
+    console.log(`Fetching weather data for user ${user_id} at location: ${weatherLocation}`);
+
+    // Get weather data from OpenWeatherMap with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const weatherResponse = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(weatherLocation)}&appid=${OPENWEATHER_API_KEY}&units=metric`
+      `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(weatherLocation)}&appid=${OPENWEATHER_API_KEY}&units=metric`,
+      { signal: controller.signal }
     );
+    
+    clearTimeout(timeoutId);
 
     if (!weatherResponse.ok) {
       throw new Error('Failed to fetch weather data');
@@ -141,13 +172,27 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in weather notifications:', error);
+    
+    // Security: Don't expose internal error details to clients
+    let errorMessage = 'An error occurred while processing your request';
+    let statusCode = 500;
+    
+    const err = error as any;
+    if (err.name === 'AbortError') {
+      errorMessage = 'Request timeout';
+      statusCode = 408;
+    } else if (err.message && (err.message.includes('User ID') || err.message.includes('location') || err.message.includes('Invalid'))) {
+      errorMessage = err.message;
+      statusCode = 400;
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: errorMessage,
         success: false 
       }),
       {
-        status: 500,
+        status: statusCode,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );

@@ -123,7 +123,7 @@ serve(async (req) => {
     console.error('Disease analysis error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: (error as any).message || 'Analysis failed',
         detectedDisease: "Analysis Error",
         confidenceScore: 0,
         symptoms: "Unable to analyze image",
