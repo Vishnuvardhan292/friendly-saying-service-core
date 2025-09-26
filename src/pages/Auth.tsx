@@ -58,7 +58,10 @@ const Auth = () => {
         password: signInData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
 
       toast({
         title: "Welcome back!",
@@ -70,10 +73,26 @@ const Auth = () => {
       let title = "Sign In Failed";
       let description = error.message;
       
+      // Handle specific error types
       if (error.message.includes("Email not confirmed")) {
         title = "Email Not Confirmed";
         description = "Please check your email and click the confirmation link before signing in. Check your spam folder if you don't see it.";
+      } else if (error.message.includes("Invalid login credentials")) {
+        title = "Sign In Failed";
+        description = "The email or password you entered is incorrect. Please check your credentials and try again.";
+      } else if (error.message.includes("Too many requests")) {
+        title = "Too Many Attempts";
+        description = "Too many sign-in attempts. Please wait a few minutes before trying again.";
+      } else if (error.message.includes("User not found")) {
+        title = "Account Not Found";
+        description = "No account found with this email address. Please sign up first.";
       }
+      
+      console.error('Auth error details:', {
+        message: error.message,
+        status: error.status,
+        name: error.name
+      });
       
       toast({
         title,
