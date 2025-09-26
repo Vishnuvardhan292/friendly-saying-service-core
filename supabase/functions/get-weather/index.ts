@@ -21,23 +21,45 @@ serve(async (req) => {
 
     // Get coordinates from location name
     const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${apiKey}`
-    const geoResponse = await fetch(geoUrl)
-    const geoData = await geoResponse.json()
+    console.log('Geocoding URL:', geoUrl)
     
-    if (!geoData || geoData.length === 0) {
-      throw new Error('Location not found')
+    const geoResponse = await fetch(geoUrl)
+    if (!geoResponse.ok) {
+      throw new Error(`Geocoding API error: ${geoResponse.status}`)
+    }
+    
+    const geoData = await geoResponse.json()
+    console.log('Geocoding response:', geoData)
+    
+    if (!geoData || !Array.isArray(geoData) || geoData.length === 0) {
+      throw new Error(`Location "${location}" not found. Please try a different location name.`)
     }
 
-    const { lat, lon } = geoData[0]
+    const firstResult = geoData[0]
+    if (!firstResult || typeof firstResult.lat !== 'number' || typeof firstResult.lon !== 'number') {
+      throw new Error('Invalid location data received from geocoding service')
+    }
+
+    const { lat, lon } = firstResult
 
     // Get current weather
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
     const weatherResponse = await fetch(weatherUrl)
+    
+    if (!weatherResponse.ok) {
+      throw new Error(`Weather API error: ${weatherResponse.status}`)
+    }
+    
     const weatherData = await weatherResponse.json()
 
     // Get 5-day forecast
     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`
     const forecastResponse = await fetch(forecastUrl)
+    
+    if (!forecastResponse.ok) {
+      throw new Error(`Forecast API error: ${forecastResponse.status}`)
+    }
+    
     const forecastData = await forecastResponse.json()
 
     const result = {
@@ -63,8 +85,8 @@ serve(async (req) => {
         rain_chance: item.pop * 100, // Probability of precipitation
       })),
       location: {
-        name: geoData[0].name,
-        country: geoData[0].country,
+        name: firstResult.name,
+        country: firstResult.country,
         lat,
         lon,
       }
