@@ -15,8 +15,10 @@ serve(async (req) => {
     const { location } = await req.json()
     
     const apiKey = Deno.env.get('OPENWEATHER_API_KEY')
+    console.log('API Key status:', apiKey ? 'Found' : 'Missing')
+    
     if (!apiKey) {
-      throw new Error('OpenWeather API key not configured')
+      throw new Error('OpenWeather API key not configured. Please add OPENWEATHER_API_KEY secret in Supabase.')
     }
 
     // Get coordinates from location name
