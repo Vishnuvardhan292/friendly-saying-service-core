@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, CalendarDays, Bell, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { Calendar, CalendarDays, Bell, Plus, Edit, Trash2, CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { useAuthProtection } from '@/hooks/useAuthProtection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +15,12 @@ const CropCalendar = () => {
   const { user, requireAuth } = useAuthProtection();
   const { toast } = useToast();
   const [tasks, setTasks] = useState([]);
+  const [crops, setCrops] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [cultivationPlan, setCultivationPlan] = useState([]);
+  const [showPlan, setShowPlan] = useState(true);
   const [newTask, setNewTask] = useState({
     crop_name: '',
     task_type: '',
@@ -32,7 +37,11 @@ const CropCalendar = () => {
   }
 
   useEffect(() => {
-    fetchTasks();
+    if (user) {
+      fetchTasks();
+      fetchCrops();
+      fetchProfile();
+    }
   }, [user]);
 
   const fetchTasks = async () => {
@@ -47,6 +56,110 @@ const CropCalendar = () => {
       setTasks(data || []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
+    }
+  };
+
+  const fetchCrops = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('crops')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCrops(data || []);
+    } catch (error) {
+      console.error('Error fetching crops:', error);
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const generateCropPlan = async (crop) => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-crop-plan', {
+        body: {
+          cropName: crop.name,
+          variety: crop.variety,
+          plantingDate: crop.planting_date,
+          expectedHarvestDate: crop.expected_harvest_date,
+          soilType: profile?.soil_type || 'unknown',
+          location: profile?.location || 'India'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.plan) {
+        setCultivationPlan(data.plan);
+        toast({
+          title: "Plan Generated!",
+          description: `Created ${data.plan.length} activities for ${crop.name}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error generating plan:', error);
+      toast({
+        title: "Generation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const addPlanToCalendar = async (activity, crop) => {
+    if (!crop?.planting_date) return;
+
+    const plantingDate = new Date(crop.planting_date);
+    const scheduledDate = new Date(plantingDate);
+    scheduledDate.setDate(scheduledDate.getDate() + activity.day_number - 1);
+
+    try {
+      const { error } = await supabase
+        .from('farm_tasks')
+        .insert({
+          user_id: user.id,
+          crop_name: crop.name,
+          task_type: activity.activity,
+          task_description: activity.description,
+          scheduled_date: scheduledDate.toISOString().split('T')[0],
+          priority: activity.day_number <= 30 ? 'high' : 'medium',
+          notes: `Resources: ${activity.required_resources?.join(', ')}`,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Task Added",
+        description: `${activity.activity} scheduled for Day ${activity.day_number}`,
+      });
+
+      fetchTasks();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -187,6 +300,108 @@ const CropCalendar = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Crop Selection & Plan Generation */}
+        {crops.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Sparkles className="w-5 h-5 mr-2 text-primary" />
+                AI-Powered Cultivation Plans
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Generate a complete day-by-day cultivation plan for your crops using AI
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {crops.map((crop) => (
+                    <Button
+                      key={crop.id}
+                      onClick={() => generateCropPlan(crop)}
+                      disabled={isGenerating}
+                      variant="outline"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Generate Plan for {crop.name}
+                        </>
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Generated Cultivation Plan */}
+        {cultivationPlan.length > 0 && showPlan && (
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <CalendarDays className="w-5 h-5 mr-2 text-primary" />
+                  Day-by-Day Cultivation Plan ({cultivationPlan.length} activities)
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPlan(false)}
+                >
+                  Hide Plan
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                {cultivationPlan.map((activity, index) => (
+                  <div key={index} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline">Day {activity.day_number}</Badge>
+                          <h4 className="font-semibold">{activity.activity}</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {activity.description}
+                        </p>
+                        {activity.required_resources && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {activity.required_resources.map((resource, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {resource}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        {activity.estimated_duration && (
+                          <p className="text-xs text-muted-foreground">
+                            Duration: {activity.estimated_duration}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => addPlanToCalendar(activity, crops[0])}
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add to Calendar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Add Task Form */}
           {showAddTask && (
