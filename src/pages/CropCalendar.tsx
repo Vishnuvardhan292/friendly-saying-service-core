@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const CropCalendar = () => {
-  const { user, requireAuth } = useAuthProtection();
+  const { user, loading, requireAuth } = useAuthProtection();
   const { toast } = useToast();
   const [tasks, setTasks] = useState([]);
   const [crops, setCrops] = useState([]);
@@ -30,11 +30,11 @@ const CropCalendar = () => {
     notes: ''
   });
 
-  // Check authentication
-  if (!user) {
-    requireAuth();
-    return null;
-  }
+  useEffect(() => {
+    if (!loading && !user) {
+      requireAuth();
+    }
+  }, [user, loading, requireAuth]);
 
   useEffect(() => {
     if (user) {
@@ -275,6 +275,18 @@ const CropCalendar = () => {
   const upcomingTasks = tasks.filter(task => task.scheduled_date >= today && task.status !== 'completed');
   const completedTasks = tasks.filter(task => task.status === 'completed');
   const overdueTasks = tasks.filter(task => task.scheduled_date < today && task.status !== 'completed');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
