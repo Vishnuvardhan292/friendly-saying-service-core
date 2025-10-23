@@ -15,6 +15,7 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -77,6 +78,7 @@ const Auth = () => {
       if (error.message.includes("Email not confirmed")) {
         title = "Email Not Confirmed";
         description = "Please check your email and click the confirmation link before signing in. Check your spam folder if you don't see it.";
+        setShowEmailNotConfirmed(true);
       } else if (error.message.includes("Invalid login credentials")) {
         title = "Sign In Failed";
         description = "The email or password you entered is incorrect. Please check your credentials and try again.";
@@ -114,6 +116,7 @@ const Auth = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
@@ -129,12 +132,15 @@ const Auth = () => {
         title: "Confirmation Email Sent",
         description: "Please check your email for the confirmation link.",
       });
+      setShowEmailNotConfirmed(false);
     } catch (error) {
       toast({
         title: "Failed to Resend",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -280,6 +286,28 @@ const Auth = () => {
 
               {/* Sign In Tab */}
               <TabsContent value="signin">
+                {showEmailNotConfirmed && (
+                  <div className="mb-4 p-4 bg-warning/10 border border-warning rounded-lg">
+                    <h3 className="font-semibold text-warning mb-2 flex items-center">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Email Not Confirmed
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      You need to confirm your email before signing in. Check your inbox (and spam folder) for the confirmation link.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendConfirmation}
+                      disabled={isLoading}
+                      className="w-full"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Resend Confirmation Email
+                    </Button>
+                  </div>
+                )}
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
