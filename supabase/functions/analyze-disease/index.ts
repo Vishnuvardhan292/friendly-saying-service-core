@@ -12,14 +12,43 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl, cropType } = await req.json();
+    const { imageUrls, cropType } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('Lovable API key not configured');
     }
 
-    console.log('Analyzing disease for crop:', cropType, 'Image:', imageUrl);
+    // Support both single image (backward compatibility) and multiple images
+    const urls = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+    console.log(`Analyzing ${urls.length} image(s) for crop:`, cropType);
+
+    // Build content array with text prompt and all images
+    const contentArray = [
+      {
+        type: 'text',
+        text: `You are an expert agricultural pathologist. Analyze ${urls.length > 1 ? 'these' : 'this'} ${cropType || 'crop'} plant image${urls.length > 1 ? 's' : ''} from different angles for diseases, pests, or health issues.
+
+${urls.length > 1 ? 'Consider all images together to provide a comprehensive analysis.' : ''}
+
+Provide your analysis as a JSON object with these exact keys:
+- detectedDisease: string (disease name or "Healthy" if no disease)
+- confidenceScore: number (0-100)
+- symptoms: string (describe what you observe in detail across all images)
+- treatmentRecommendation: string (specific treatment advice with 2-3 actionable steps)
+- preventionMethods: string (2-3 prevention strategies)
+
+Return ONLY the JSON object, no additional text.`
+      }
+    ];
+
+    // Add all images to the content array
+    urls.forEach((url: string) => {
+      contentArray.push({
+        type: 'image_url',
+        image_url: { url }
+      });
+    });
 
     // Call Lovable AI Gateway with GPT-5-mini (reliable for vision analysis)
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -33,27 +62,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `You are an expert agricultural pathologist. Analyze this ${cropType || 'crop'} plant image for diseases, pests, or health issues.
-
-Provide your analysis as a JSON object with these exact keys:
-- detectedDisease: string (disease name or "Healthy" if no disease)
-- confidenceScore: number (0-100)
-- symptoms: string (describe what you observe in detail)
-- treatmentRecommendation: string (specific treatment advice with 2-3 actionable steps)
-- preventionMethods: string (2-3 prevention strategies)
-
-Return ONLY the JSON object, no additional text.`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageUrl
-                }
-              }
-            ]
+            content: contentArray
           }
         ],
         max_completion_tokens: 1000

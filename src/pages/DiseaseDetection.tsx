@@ -23,13 +23,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 const DiseaseDetection = () => {
   const { user, requireAuth } = useAuthProtection();
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<Array<{ id: number; url: string; name: string }>>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [cropType, setCropType] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Check authentication
@@ -38,23 +38,49 @@ const DiseaseDetection = () => {
     return null;
   }
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      // Limit to 5 images
+      const limitedFiles = files.slice(0, 5);
+      
+      if (files.length > 5) {
+        toast({
+          title: "Too Many Images",
+          description: "Maximum 5 images allowed. First 5 images selected.",
+          variant: "destructive",
+        });
+      }
+
+      setSelectedImages(limitedFiles);
+      
+      // Generate previews for all images
+      const previews: Array<{ id: number; url: string; name: string }> = [];
+      limitedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            previews.push({ id: index, url: e.target.result as string, name: file.name });
+            if (previews.length === limitedFiles.length) {
+              setImagePreviews(previews);
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
+  const removeImage = (indexToRemove: number) => {
+    setSelectedImages(prev => prev.filter((_, index) => index !== indexToRemove));
+    setImagePreviews(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const analyzeImage = async () => {
-    if (!selectedImage || !cropType) {
+    if (selectedImages.length === 0 || !cropType) {
       toast({
         title: "Missing Information",
-        description: "Please upload an image and specify the crop type.",
+        description: "Please upload at least one image and specify the crop type.",
         variant: "destructive",
       });
       return;
@@ -64,28 +90,32 @@ const DiseaseDetection = () => {
     setUploadProgress(0);
 
     try {
-      // Upload image to Supabase Storage
-      const fileExt = selectedImage.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('crop-images')
-        .upload(fileName, selectedImage);
+      // Upload all images to Supabase Storage
+      const uploadPromises = selectedImages.map(async (image, index) => {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}_${index}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('crop-images')
+          .upload(fileName, image);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('crop-images')
-        .getPublicUrl(fileName);
+        const { data: { publicUrl } } = supabase.storage
+          .from('crop-images')
+          .getPublicUrl(fileName);
 
-      // Call AI analysis edge function
-      setUploadProgress(50);
-      
+        return publicUrl;
+      });
+
+      const imageUrls = await Promise.all(uploadPromises);
+      setUploadProgress(40);
+
+      // Call AI analysis edge function with multiple images
       const { data: analysisData, error: analysisError } = await supabase.functions
         .invoke('analyze-disease', {
           body: {
-            imageUrl: publicUrl,
+            imageUrls: imageUrls,
             cropType: cropType
           }
         });
@@ -112,12 +142,12 @@ const DiseaseDetection = () => {
 
       setUploadProgress(100);
 
-      // Save to database
+      // Save to database (use first image URL as primary)
       const { error: dbError } = await supabase
         .from('disease_detections')
         .insert({
           user_id: user.id,
-          image_url: publicUrl,
+          image_url: imageUrls[0],
           crop_type: cropType,
           detected_disease: aiResults.disease,
           confidence_score: aiResults.confidence,
@@ -218,21 +248,39 @@ const DiseaseDetection = () => {
                 </div>
 
                 <div>
-                  <Label>Crop Image</Label>
+                  <Label>Crop Images (up to 5)</Label>
                   <div 
                     className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    {imagePreview ? (
+                    {imagePreviews.length > 0 ? (
                       <div className="space-y-4">
-                        <img 
-                          src={imagePreview} 
-                          alt="Uploaded crop" 
-                          className="max-w-full h-48 object-contain mx-auto rounded-lg"
-                        />
-                        <Button variant="outline" size="sm">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={preview.id} className="relative group">
+                              <img 
+                                src={preview.url} 
+                                alt={`Crop ${index + 1}`} 
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(index);
+                                }}
+                                className="absolute top-2 right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                              >
+                                ×
+                              </button>
+                              <div className="absolute bottom-2 left-2 bg-background/80 text-xs px-2 py-1 rounded">
+                                {index + 1}/{imagePreviews.length}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <Button variant="outline" size="sm" type="button">
                           <Upload className="w-4 h-4 mr-2" />
-                          Change Image
+                          {imagePreviews.length < 5 ? 'Add More Images' : 'Change Images'}
                         </Button>
                       </div>
                     ) : (
@@ -241,8 +289,9 @@ const DiseaseDetection = () => {
                           <Camera className="w-8 h-8 text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-foreground font-medium">Click to upload image</p>
-                          <p className="text-sm text-muted-foreground">PNG, JPG up to 10MB</p>
+                          <p className="text-foreground font-medium">Click to upload images</p>
+                          <p className="text-sm text-muted-foreground">Upload 1-5 images from different angles</p>
+                          <p className="text-sm text-muted-foreground">PNG, JPG up to 10MB each</p>
                         </div>
                       </div>
                     )}
@@ -251,6 +300,7 @@ const DiseaseDetection = () => {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={handleImageUpload}
                     className="hidden"
                   />
@@ -258,19 +308,19 @@ const DiseaseDetection = () => {
 
                 <Button 
                   onClick={analyzeImage}
-                  disabled={!selectedImage || !cropType || isAnalyzing}
+                  disabled={selectedImages.length === 0 || !cropType || isAnalyzing}
                   className="w-full"
                   variant="hero"
                 >
                   {isAnalyzing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                      Analyzing...
+                      Analyzing {selectedImages.length} image{selectedImages.length > 1 ? 's' : ''}...
                     </>
                   ) : (
                     <>
                       <Search className="w-4 h-4 mr-2" />
-                      Analyze Image
+                      Analyze {selectedImages.length > 0 ? `${selectedImages.length} Image${selectedImages.length > 1 ? 's' : ''}` : 'Images'}
                     </>
                   )}
                 </Button>
