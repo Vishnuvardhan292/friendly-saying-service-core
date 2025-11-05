@@ -21,7 +21,7 @@ serve(async (req) => {
 
     console.log('Analyzing disease for crop:', cropType, 'Image:', imageUrl);
 
-    // Call Lovable AI Gateway with vision model
+    // Call Lovable AI Gateway with Gemini vision model (best for image analysis)
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -29,7 +29,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
