@@ -21,7 +21,7 @@ serve(async (req) => {
 
     console.log('Analyzing disease for crop:', cropType, 'Image:', imageUrl);
 
-    // Call Lovable AI Gateway with Gemini Pro (best for complex vision analysis)
+    // Call Lovable AI Gateway with GPT-5-mini (reliable for vision analysis)
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -29,7 +29,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
+        model: 'openai/gpt-5-mini',
         messages: [
           {
             role: 'user',
@@ -56,13 +56,14 @@ Return ONLY the JSON object, no additional text.`
             ]
           }
         ],
-        modalities: ["image", "text"]
+        max_completion_tokens: 1000
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Lovable AI API error:', errorData);
+      console.error('Lovable AI API error status:', response.status);
+      console.error('Lovable AI API error details:', errorData);
       
       if (response.status === 429) {
         throw new Error('Rate limit exceeded. Please try again later.');
@@ -71,7 +72,7 @@ Return ONLY the JSON object, no additional text.`
         throw new Error('Payment required. Please add credits to your workspace.');
       }
       
-      throw new Error(`AI API error: ${response.status}`);
+      throw new Error(`AI API error: ${response.status} - ${errorData}`);
     }
 
     const data = await response.json();
