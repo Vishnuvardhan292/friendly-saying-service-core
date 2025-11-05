@@ -52,17 +52,15 @@ const Auth = () => {
   const handleSignIn = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setShowEmailNotConfirmed(false); // Reset error state
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: signInData.email,
+        email: signInData.email.trim(),
         password: signInData.password,
       });
 
-      if (error) {
-        console.error('Sign in error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Welcome back!",
@@ -77,24 +75,18 @@ const Auth = () => {
       // Handle specific error types
       if (error.message.includes("Email not confirmed")) {
         title = "Email Not Confirmed";
-        description = "Please check your email and click the confirmation link before signing in. Check your spam folder if you don't see it.";
+        description = "You must verify your email before signing in. Check your inbox and spam folder.";
         setShowEmailNotConfirmed(true);
       } else if (error.message.includes("Invalid login credentials")) {
-        title = "Sign In Failed";
-        description = "The email or password you entered is incorrect. Please check your credentials and try again.";
+        title = "Incorrect Credentials";
+        description = "Wrong email or password. Double-check and try again.";
       } else if (error.message.includes("Too many requests")) {
         title = "Too Many Attempts";
-        description = "Too many sign-in attempts. Please wait a few minutes before trying again.";
+        description = "Please wait a few minutes before trying again.";
       } else if (error.message.includes("User not found")) {
         title = "Account Not Found";
-        description = "No account found with this email address. Please sign up first.";
+        description = "No account with this email. Please sign up first.";
       }
-      
-      console.error('Auth error details:', {
-        message: error.message,
-        status: error.status,
-        name: error.name
-      });
       
       toast({
         title,
@@ -148,6 +140,17 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Validation
+    if (signUpData.password.length < 6) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     if (signUpData.password !== signUpData.confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -162,12 +165,12 @@ const Auth = () => {
       const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { data, error } = await supabase.auth.signUp({
-        email: signUpData.email,
+        email: signUpData.email.trim(),
         password: signUpData.password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: signUpData.fullName,
+            full_name: signUpData.fullName.trim(),
             phone: signUpData.phone,
             location: signUpData.location,
             farm_size: signUpData.farmSize,
@@ -180,16 +183,23 @@ const Auth = () => {
 
       toast({
         title: "Account Created!",
-        description: "Please check your email to verify your account.",
+        description: "✅ Check your email to verify your account before signing in.",
+        duration: 6000,
       });
 
-      // Switch to sign in tab
+      // Switch to sign in tab and pre-fill email
       setActiveTab('signin');
       setSignInData({ email: signUpData.email, password: '' });
+      setShowEmailNotConfirmed(true); // Show confirmation reminder
     } catch (error) {
+      let description = error.message;
+      if (error.message.includes("User already registered")) {
+        description = "This email is already registered. Try signing in instead.";
+      }
+      
       toast({
         title: "Sign Up Failed",
-        description: error.message,
+        description,
         variant: "destructive",
       });
     } finally {
@@ -377,7 +387,7 @@ const Auth = () => {
                     Sign in with Google
                   </Button>
 
-                  <div className="flex justify-between items-center mt-4">
+                  <div className="flex justify-center items-center mt-4">
                     <Button 
                       type="button" 
                       variant="ghost" 
@@ -386,15 +396,6 @@ const Auth = () => {
                       className="text-muted-foreground hover:text-foreground"
                     >
                       Forgot Password?
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={handleResendConfirmation}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      Resend Confirmation
                     </Button>
                   </div>
                 </form>
