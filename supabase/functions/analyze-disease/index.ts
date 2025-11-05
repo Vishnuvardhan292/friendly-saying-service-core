@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,22 +14,22 @@ serve(async (req) => {
   try {
     const { imageUrl, cropType } = await req.json();
     
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('Lovable API key not configured');
     }
 
     console.log('Analyzing disease for crop:', cropType, 'Image:', imageUrl);
 
-    // Call OpenAI Vision API for disease analysis
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Lovable AI Gateway with vision model
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'openai/gpt-5',
         messages: [
           {
             role: 'system',
@@ -64,25 +63,32 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.1
+        max_completion_tokens: 1000
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('Lovable AI API error:', errorData);
+      
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      }
+      if (response.status === 402) {
+        throw new Error('Payment required. Please add credits to your workspace.');
+      }
+      
+      throw new Error(`AI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const content = data.choices[0]?.message?.content;
     
     if (!content) {
-      throw new Error('No analysis result from OpenAI');
+      throw new Error('No analysis result from AI');
     }
 
-    console.log('Raw OpenAI response:', content);
+    console.log('Raw AI response:', content);
 
     // Parse the JSON response from OpenAI
     let analysisResult;
