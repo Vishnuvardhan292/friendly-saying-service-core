@@ -21,7 +21,7 @@ serve(async (req) => {
 
     console.log('Analyzing disease for crop:', cropType, 'Image:', imageUrl);
 
-    // Call Lovable AI Gateway with Gemini vision model (best for image analysis)
+    // Call Lovable AI Gateway with Gemini Pro (best for complex vision analysis)
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -29,30 +29,23 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
         messages: [
-          {
-            role: 'system',
-            content: `You are an expert agricultural pathologist specializing in crop disease identification. Analyze the provided image of a ${cropType || 'crop'} plant and provide:
-            1. Disease identification (if any)
-            2. Confidence score (0-100)
-            3. Symptoms observed
-            4. Treatment recommendations
-            5. Prevention methods
-            
-            Return your response as a valid JSON object with these exact keys:
-            - detectedDisease: string (disease name or "Healthy" if no disease)
-            - confidenceScore: number (0-100)
-            - symptoms: string (describe what you observe)
-            - treatmentRecommendation: string (specific treatment advice)
-            - preventionMethods: string (prevention strategies)`
-          },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Please analyze this ${cropType || 'crop'} plant image for diseases, pests, or health issues.`
+                text: `You are an expert agricultural pathologist. Analyze this ${cropType || 'crop'} plant image for diseases, pests, or health issues.
+
+Provide your analysis as a JSON object with these exact keys:
+- detectedDisease: string (disease name or "Healthy" if no disease)
+- confidenceScore: number (0-100)
+- symptoms: string (describe what you observe in detail)
+- treatmentRecommendation: string (specific treatment advice with 2-3 actionable steps)
+- preventionMethods: string (2-3 prevention strategies)
+
+Return ONLY the JSON object, no additional text.`
               },
               {
                 type: 'image_url',
@@ -63,7 +56,7 @@ serve(async (req) => {
             ]
           }
         ],
-        max_completion_tokens: 1000
+        modalities: ["image", "text"]
       }),
     });
 
