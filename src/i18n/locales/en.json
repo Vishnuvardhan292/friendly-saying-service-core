@@ -1,0 +1,64 @@
+{
+  "header": {
+    "title": "Smart Agro Assistant",
+    "dashboard": "Dashboard",
+    "cropManagement": "Crop Management",
+    "diseaseDetection": "Disease Detection",
+    "cropPlanner": "Crop Planner",
+    "calendar": "Calendar",
+    "soilData": "Soil Data",
+    "dataExport": "Data Export",
+    "profile": "Profile",
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "title": "Smart Farming for Better Yields",
+    "subtitle": "AI-powered agricultural assistance for modern farmers. Get real-time insights, disease detection, and personalized crop recommendations.",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More"
+  },
+  "features": {
+    "title": "Powerful Features for Smart Farming",
+    "weatherMonitoring": "Weather Monitoring",
+    "weatherDesc": "Real-time weather updates and forecasts tailored to your location",
+    "diseaseDetection": "Disease Detection",
+    "diseaseDesc": "AI-powered disease identification with treatment recommendations",
+    "cropPlanning": "Smart Crop Planning",
+    "cropDesc": "Personalized crop recommendations based on soil and climate data",
+    "community": "Farmer Community",
+    "communityDesc": "Connect with fellow farmers and share knowledge"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "overview": "Farm Overview",
+    "weather": "Weather",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "windSpeed": "Wind Speed",
+    "activeCrops": "Active Crops",
+    "viewAll": "View All",
+    "soilHealth": "Soil Health",
+    "lastTested": "Last tested",
+    "pH": "pH Level",
+    "nitrogen": "Nitrogen",
+    "phosphorus": "Phosphorus",
+    "potassium": "Potassium",
+    "quickActions": "Quick Actions",
+    "addCrop": "Add New Crop",
+    "checkDisease": "Check Disease",
+    "viewCalendar": "View Calendar",
+    "weatherError": "Unable to load weather data"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "language": "Language"
+  }
+}

@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Leaf, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuthProtection } from '@/hooks/useAuthProtection';
 import NotificationCenter from '@/components/NotificationCenter';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +16,7 @@ import {
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const { user, signOut, loading } = useAuthProtection();
+  const { t } = useTranslation();
 
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
@@ -24,7 +27,7 @@ const Header = () => {
             <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
               <Leaf className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">Smart Agro Assistant</span>
+            <span className="text-xl font-bold text-foreground">{t('header.title')}</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -51,6 +54,7 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center space-x-4">
+            <LanguageSelector />
             {user ? (
               <>
                 <NotificationCenter />
@@ -63,23 +67,23 @@ const Header = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => window.location.href = '/dashboard'}>
-                      Dashboard
+                      {t('header.dashboard')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
-                      Profile
+                      {t('header.profile')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive">
                       <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
+                      {t('header.signOut')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => window.location.href = '/auth'}>Sign In</Button>
-                <Button variant="hero" onClick={() => window.location.href = '/auth'}>Get Started</Button>
+                <Button variant="ghost" onClick={() => window.location.href = '/auth'}>{t('header.signIn')}</Button>
+                <Button variant="hero" onClick={() => window.location.href = '/auth'}>{t('header.getStarted')}</Button>
               </>
             )}
           </div>

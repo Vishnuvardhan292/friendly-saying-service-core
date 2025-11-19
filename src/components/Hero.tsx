@@ -1,9 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, Smartphone, Brain, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import heroImage from '@/assets/hero-farming.jpg';
 
 const Hero = () => {
+  const { t } = useTranslation();
+  
   return (
     <section className="relative min-h-screen flex items-center bg-gradient-to-br from-background to-muted overflow-hidden">
       {/* Background Pattern */}
@@ -26,13 +29,10 @@ const Hero = () => {
             {/* Main Heading */}
             <div className="space-y-4">
               <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
-                Smart Farming
-                <span className="block bg-gradient-primary bg-clip-text text-transparent">
-                  Made Simple
-                </span>
+                {t('hero.title')}
               </h1>
               <p className="text-xl text-muted-foreground max-w-lg">
-                AI-powered daily crop guidance and seasonal planning to maximize your yield and optimize your farming operations.
+                {t('hero.subtitle')}
               </p>
             </div>
 
@@ -67,12 +67,12 @@ const Hero = () => {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="hero" size="lg" className="group" onClick={() => window.location.href = '/auth'}>
-                Start Free Trial
+                {t('hero.getStarted')}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button variant="outline" size="lg" className="group" onClick={() => window.location.href = '/disease-detection'}>
                 <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                Try Disease Detection
+                {t('features.diseaseDetection')}
               </Button>
             </div>
           </div>
