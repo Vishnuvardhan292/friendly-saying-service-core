@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useTranslation } from 'react-i18next';
 import { 
   Leaf, 
   CloudRain, 
@@ -76,6 +77,7 @@ interface CropRecommendation {
 
 const Dashboard = () => {
   const { user, loading, requireAuth, signOut } = useAuthProtection();
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [crops, setCrops] = useState<Crop[]>([]);
   const [todayTasks, setTodayTasks] = useState([]);
@@ -331,10 +333,10 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {profile?.full_name || 'Farmer'}!
+            {t('dashboard.welcome')}, {profile?.full_name || 'Farmer'}!
           </h1>
           <p className="text-muted-foreground">
-            Here's your farming dashboard overview for today
+            {t('dashboard.overview')}
           </p>
         </div>
 
@@ -659,7 +661,7 @@ const Dashboard = () => {
             {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>{t('dashboard.quickActions')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -669,7 +671,7 @@ const Dashboard = () => {
                     onClick={() => navigate('/disease-detection')}
                   >
                     <Camera className="w-4 h-4 mr-2" />
-                    Disease Detection
+                    {t('dashboard.checkDisease')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -677,7 +679,7 @@ const Dashboard = () => {
                     onClick={() => navigate('/crop-management')}
                   >
                     <Leaf className="w-4 h-4 mr-2" />
-                    Manage Crops
+                    {t('header.cropManagement')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -685,7 +687,7 @@ const Dashboard = () => {
                     onClick={() => navigate('/crop-calendar')}
                   >
                     <Calendar className="w-4 h-4 mr-2" />
-                    Crop Calendar
+                    {t('dashboard.viewCalendar')}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -693,11 +695,11 @@ const Dashboard = () => {
                     onClick={() => navigate('/soil-data')}
                   >
                     <TrendingUp className="w-4 h-4 mr-2" />
-                    Soil Data
+                    {t('header.soilData')}
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
                     <Users className="w-4 h-4 mr-2" />
-                    Expert Community
+                    {t('features.community')}
                   </Button>
                 </div>
               </CardContent>

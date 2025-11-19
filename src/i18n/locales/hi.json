@@ -1,0 +1,64 @@
+{
+  "header": {
+    "title": "स्मार्ट कृषि सहायक",
+    "dashboard": "डैशबोर्ड",
+    "cropManagement": "फसल प्रबंधन",
+    "diseaseDetection": "रोग पहचान",
+    "cropPlanner": "फसल योजनाकार",
+    "calendar": "कैलेंडर",
+    "soilData": "मिट्टी डेटा",
+    "dataExport": "डेटा निर्यात",
+    "profile": "प्रोफ़ाइल",
+    "signOut": "साइन आउट",
+    "signIn": "साइन इन",
+    "getStarted": "शुरू करें"
+  },
+  "hero": {
+    "title": "बेहतर उपज के लिए स्मार्ट खेती",
+    "subtitle": "आधुनिक किसानों के लिए AI-संचालित कृषि सहायता। वास्तविक समय की जानकारी, रोग पहचान और व्यक्तिगत फसल सिफारिशें प्राप्त करें।",
+    "getStarted": "शुरू करें",
+    "learnMore": "और जानें"
+  },
+  "features": {
+    "title": "स्मार्ट खेती के लिए शक्तिशाली सुविधाएं",
+    "weatherMonitoring": "मौसम निगरानी",
+    "weatherDesc": "आपके स्थान के अनुसार वास्तविक समय मौसम अपडेट और पूर्वानुमान",
+    "diseaseDetection": "रोग पहचान",
+    "diseaseDesc": "उपचार सिफारिशों के साथ AI-संचालित रोग पहचान",
+    "cropPlanning": "स्मार्ट फसल योजना",
+    "cropDesc": "मिट्टी और जलवायु डेटा के आधार पर व्यक्तिगत फसल सिफारिशें",
+    "community": "किसान समुदाय",
+    "communityDesc": "साथी किसानों से जुड़ें और ज्ञान साझा करें"
+  },
+  "dashboard": {
+    "welcome": "वापसी पर स्वागत है",
+    "overview": "खेत अवलोकन",
+    "weather": "मौसम",
+    "temperature": "तापमान",
+    "humidity": "आर्द्रता",
+    "windSpeed": "हवा की गति",
+    "activeCrops": "सक्रिय फसलें",
+    "viewAll": "सभी देखें",
+    "soilHealth": "मिट्टी स्वास्थ्य",
+    "lastTested": "अंतिम परीक्षण",
+    "pH": "पीएच स्तर",
+    "nitrogen": "नाइट्रोजन",
+    "phosphorus": "फास्फोरस",
+    "potassium": "पोटैशियम",
+    "quickActions": "त्वरित कार्य",
+    "addCrop": "नई फसल जोड़ें",
+    "checkDisease": "रोग जांचें",
+    "viewCalendar": "कैलेंडर देखें",
+    "weatherError": "मौसम डेटा लोड करने में असमर्थ"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं",
+    "search": "खोजें",
+    "filter": "फ़िल्टर",
+    "language": "भाषा"
+  }
+}

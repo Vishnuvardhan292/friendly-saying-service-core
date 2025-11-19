@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 import { 
   Scan, 
   CloudRain, 
@@ -18,6 +19,8 @@ import weatherMonitoringImage from '@/assets/weather-monitoring.jpg';
 import communityImage from '@/assets/community.jpg';
 
 const Features = () => {
+  const { t } = useTranslation();
+  
   const features = [
     {
       icon: Scan,
@@ -84,13 +87,10 @@ const Features = () => {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in">
           <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-            Revolutionizing Agriculture with
-            <span className="block bg-gradient-primary bg-clip-text text-transparent">
-              AI Technology
-            </span>
+            {t('features.title')}
           </h2>
           <p className="text-xl text-muted-foreground">
-            Comprehensive tools designed to support farmers at every stage of the agricultural process.
+            {t('hero.subtitle')}
           </p>
         </div>
 
