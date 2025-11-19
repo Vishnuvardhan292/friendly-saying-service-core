@@ -74,7 +74,7 @@ export type Database = {
           crop_recommendation_id: number | null
           day_number: number | null
           description: string | null
-          estimated_duration: unknown | null
+          estimated_duration: unknown
           id: number
           required_resources: string[] | null
         }
@@ -83,7 +83,7 @@ export type Database = {
           crop_recommendation_id?: number | null
           day_number?: number | null
           description?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           id?: never
           required_resources?: string[] | null
         }
@@ -92,7 +92,7 @@ export type Database = {
           crop_recommendation_id?: number | null
           day_number?: number | null
           description?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           id?: never
           required_resources?: string[] | null
         }
@@ -355,7 +355,7 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           crop_name: string | null
-          estimated_duration: unknown | null
+          estimated_duration: unknown
           id: number
           notes: string | null
           priority: string | null
@@ -373,7 +373,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           crop_name?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           id?: never
           notes?: string | null
           priority?: string | null
@@ -391,7 +391,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           crop_name?: string | null
-          estimated_duration?: unknown | null
+          estimated_duration?: unknown
           id?: never
           notes?: string | null
           priority?: string | null
