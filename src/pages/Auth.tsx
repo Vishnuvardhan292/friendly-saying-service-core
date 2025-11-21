@@ -218,7 +218,7 @@ const Auth = () => {
       });
 
       if (error) {
-        console.error('Google OAuth error:', error);
+        console.error('Google OAuth failed');
         toast({
           title: "Google Sign In Failed",
           description: error.message,
@@ -228,7 +228,7 @@ const Auth = () => {
       }
       // Note: Loading state will be cleared by auth state change
     } catch (error) {
-      console.error('Google OAuth error:', error);
+      console.error('Google OAuth failed');
       toast({
         title: "Google Sign In Failed", 
         description: "Unable to sign in with Google. Please try again.",
