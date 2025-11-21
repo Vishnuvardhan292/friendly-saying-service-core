@@ -1,11 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const allowedOrigins = [
+  'https://tkydokfyorlolbarcazl.supabase.co',
+  'http://localhost:5173',
+  'http://localhost:8080'
+];
+
+const getCorsHeaders = (origin: string | null) => {
+  const corsOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+};
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -101,7 +112,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Weather API Error:', error)
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch weather data', details: (error as any).message || 'Unknown error' }),
+      JSON.stringify({ error: 'Unable to retrieve weather data. Please try again later.' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

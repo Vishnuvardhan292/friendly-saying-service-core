@@ -48,7 +48,6 @@ const Profile = () => {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
         toast({
           title: "Error",
           description: "Failed to load profile data",
@@ -66,7 +65,6 @@ const Profile = () => {
         soil_type: data.soil_type || ''
       });
     } catch (error) {
-      console.error('Error:', error);
       toast({
         title: "Error",
         description: "Failed to load profile data",
@@ -94,7 +92,6 @@ const Profile = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error updating profile:', error);
         toast({
           title: "Error",
           description: "Failed to update profile",
@@ -109,7 +106,6 @@ const Profile = () => {
         variant: "default"
       });
     } catch (error) {
-      console.error('Error:', error);
       toast({
         title: "Error",
         description: "Failed to update profile",

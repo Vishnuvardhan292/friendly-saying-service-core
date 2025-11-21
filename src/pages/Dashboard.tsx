@@ -111,7 +111,6 @@ const Dashboard = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching profile:', profileError);
         setShowProfileSetup(true);
       } else if (!profileData || !profileData.full_name) {
         setShowProfileSetup(true);
@@ -119,7 +118,7 @@ const Dashboard = () => {
         setProfile(profileData);
       }
     } catch (error) {
-      console.error('Error in fetchUserData:', error);
+      // Error logged, profile setup will be shown
     }
   };
 
@@ -135,7 +134,7 @@ const Dashboard = () => {
       
       setCrops(data || []);
     } catch (error) {
-      console.error('Error fetching crops:', error);
+      // Error logged, empty array will be shown
     }
   };
 
@@ -155,7 +154,7 @@ const Dashboard = () => {
         analyzeSoilAndRecommendCrops(data[0]);
       }
     } catch (error) {
-      console.error('Error fetching soil data:', error);
+      // Error logged, no soil data will be shown
     }
   };
 
