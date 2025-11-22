@@ -16,7 +16,10 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState('signin');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showEmailNotConfirmed, setShowEmailNotConfirmed] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -47,6 +50,14 @@ const Auth = () => {
       }
     };
     checkAuth();
+
+    // Check if coming from password reset email
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('reset') === 'true') {
+      setShowResetPassword(true);
+      // Clean up URL
+      window.history.replaceState({}, '', '/auth');
+    }
   }, [navigate]);
 
   const handleSignIn = async (e) => {
@@ -259,6 +270,58 @@ const Auth = () => {
     } catch (error) {
       toast({
         title: "Reset Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // Validation
+    if (newPassword.length < 6) {
+      toast({
+        title: "Weak Password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password Updated!",
+        description: "Your password has been successfully reset.",
+      });
+
+      setShowResetPassword(false);
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setActiveTab('signin');
+    } catch (error) {
+      toast({
+        title: "Update Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -628,6 +691,75 @@ const Auth = () => {
                   </>
                 ) : (
                   'Send Reset Link'
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Password Dialog */}
+      <Dialog open={showResetPassword} onOpenChange={setShowResetPassword}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set New Password</DialogTitle>
+            <DialogDescription>
+              Enter your new password below. Make sure it's at least 6 characters long.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-10"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="confirm-new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-10"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowResetPassword(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isLoading || !newPassword || !confirmNewPassword}
+                className="flex-1"
+                variant="hero"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Password'
                 )}
               </Button>
             </div>
