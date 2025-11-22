@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { diseaseAnalysisSchema, validateStorageUrl } from "../_shared/validation.ts"
 
 const allowedOrigins = [
   'https://tkydokfyorlolbarcazl.supabase.co',
@@ -22,7 +24,50 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrls, cropType } = await req.json();
+    // Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate input
+    const body = await req.json();
+    const validation = diseaseAnalysisSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { imageUrls, cropType } = validation.data;
+
+    // Validate all image URLs are from storage bucket
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const invalidUrls = imageUrls.filter(url => !validateStorageUrl(url, supabaseUrl));
+    if (invalidUrls.length > 0) {
+      return new Response(
+        JSON.stringify({ error: 'All image URLs must be from your storage bucket' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
