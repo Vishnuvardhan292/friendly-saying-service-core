@@ -35,6 +35,7 @@ import Header from '@/components/Header';
 
 import { useWeather } from '@/hooks/useWeather';
 import WeatherWidget from '@/components/WeatherWidget';
+import SoilMoisture from '@/components/SoilMoisture';
 
 interface Crop {
   id: string;
@@ -655,6 +656,14 @@ const Dashboard = () => {
               weather={weather} 
               loading={weatherLoading} 
               error={weatherError} 
+            />
+
+            {/* Soil Moisture Monitor */}
+            <SoilMoisture 
+              fieldLocation={profile?.location || 'Main Field'}
+              onReadingUpdate={(reading) => {
+                console.log('Moisture reading:', reading);
+              }}
             />
 
             {/* Quick Actions */}
