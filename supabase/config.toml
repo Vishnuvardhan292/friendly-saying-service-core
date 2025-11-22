@@ -1,4 +1,1 @@
 project_id = "tkydokfyorlolbarcazl"
-
-[functions.generate-crop-plan]
-verify_jwt = false

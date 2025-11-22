@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { weatherNotificationSchema } from "../_shared/validation.ts"
 
 const allowedOrigins = [
   'https://tkydokfyorlolbarcazl.supabase.co',
@@ -16,34 +17,54 @@ const getCorsHeaders = (origin: string | null) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body = await req.json();
-    
-    // Input validation and sanitization
-    if (!body || typeof body !== 'object') {
-      throw new Error('Invalid request body');
+    // Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const { user_id, location } = body;
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
 
-    // Validate user_id
-    if (!user_id || typeof user_id !== 'string' || user_id.length < 1 || user_id.length > 100) {
-      throw new Error('Valid user ID is required');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Validate and sanitize location if provided
-    if (location && (typeof location !== 'string' || location.length > 200)) {
-      throw new Error('Location must be a valid string under 200 characters');
+    // Validate input
+    const requestBody = await req.json();
+    const validation = weatherNotificationSchema.safeParse(requestBody);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Basic XSS prevention for location input
-    if (location && /<script|javascript:|on\w+=/i.test(location)) {
-      throw new Error('Invalid location format');
+    const { user_id, location } = validation.data;
+
+    // Verify user_id matches authenticated user
+    if (user_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: user_id mismatch' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const OPENWEATHER_API_KEY = Deno.env.get('OPENWEATHER_API_KEY');
@@ -55,13 +76,8 @@ serve(async (req) => {
       throw new Error('Missing required environment variables');
     }
 
-    // Default to a sample location if none provided, with additional sanitization
+    // Default to a sample location if none provided
     const weatherLocation = (location && location.trim()) || 'London,UK';
-    
-    // Additional validation for weather API call
-    if (weatherLocation.length > 100) {
-      throw new Error('Location name too long');
-    }
 
     console.log(`Fetching weather data for user ${user_id} at location: ${weatherLocation}`);
 
