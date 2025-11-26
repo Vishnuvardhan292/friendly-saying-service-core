@@ -162,14 +162,17 @@ const Dashboard = () => {
   const analyzeSoilAndRecommendCrops = (soil: SoilData) => {
     const recommendations: CropRecommendation[] = [];
     
+    // Safely check soil type
+    const soilTypeStr = (soil.soil_type || '').toLowerCase();
+    
     // Rice - suitable for pH 5.5-6.5, high water retention
-    if (soil.ph_level >= 5.5 && soil.ph_level <= 6.5 && soil.soil_type.toLowerCase().includes('clay')) {
+    if (soil.ph_level >= 5.5 && soil.ph_level <= 6.5) {
       recommendations.push({
         name: 'Rice',
-        suitability_score: 85,
+        suitability_score: soilTypeStr.includes('clay') ? 85 : 75,
         reasons: [
           `pH ${soil.ph_level} is ideal for rice cultivation`,
-          `${soil.soil_type} soil provides good water retention`,
+          `${soil.soil_type || 'Your'} soil can support rice cultivation`,
           `Nitrogen level ${soil.nitrogen_level} supports leafy growth`
         ],
         planting_season: 'Kharif (June-July)',
@@ -185,10 +188,10 @@ const Dashboard = () => {
     }
 
     // Wheat - suitable for pH 6.0-7.5, moderate nitrogen
-    if (soil.ph_level >= 6.0 && soil.ph_level <= 7.5 && soil.nitrogen_level >= 40) {
+    if (soil.ph_level >= 6.0 && soil.ph_level <= 7.5) {
       recommendations.push({
         name: 'Wheat',
-        suitability_score: 90,
+        suitability_score: soil.nitrogen_level >= 40 ? 90 : 80,
         reasons: [
           `pH ${soil.ph_level} is perfect for wheat`,
           `Nitrogen level ${soil.nitrogen_level} supports grain development`,
@@ -206,11 +209,11 @@ const Dashboard = () => {
       });
     }
 
-    // Tomato - suitable for pH 6.0-6.8, well-drained soil
-    if (soil.ph_level >= 6.0 && soil.ph_level <= 6.8 && soil.organic_matter_percentage >= 2) {
+    // Tomato - suitable for pH 6.0-7.0, well-drained soil
+    if (soil.ph_level >= 6.0 && soil.ph_level <= 7.0) {
       recommendations.push({
         name: 'Tomato',
-        suitability_score: 88,
+        suitability_score: soil.organic_matter_percentage >= 2 ? 88 : 78,
         reasons: [
           `pH ${soil.ph_level} is ideal for tomato cultivation`,
           `Organic matter ${soil.organic_matter_percentage}% provides good nutrition`,
@@ -224,6 +227,50 @@ const Dashboard = () => {
           { week: 8, activity: 'First Fertilizer', description: 'Apply balanced NPK fertilizer' },
           { week: 10, activity: 'Flowering', description: 'Monitor for first flower clusters' },
           { week: 14, activity: 'Harvest', description: 'Start harvesting mature fruits' }
+        ]
+      });
+    }
+
+    // Potato - suitable for pH 5.0-6.5
+    if (soil.ph_level >= 5.0 && soil.ph_level <= 6.5) {
+      recommendations.push({
+        name: 'Potato',
+        suitability_score: 82,
+        reasons: [
+          `pH ${soil.ph_level} is ideal for potato cultivation`,
+          `Good potassium level ${soil.potassium_level} for tuber development`,
+          `Phosphorus ${soil.phosphorus_level} supports root growth`
+        ],
+        planting_season: 'Rabi (October-November)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Prepare ridges and furrows' },
+          { week: 2, activity: 'Planting', description: 'Plant seed potatoes in furrows' },
+          { week: 4, activity: 'Earthing Up', description: 'Cover emerging shoots with soil' },
+          { week: 8, activity: 'Fertilizer Application', description: 'Apply balanced fertilizer' },
+          { week: 12, activity: 'Flowering', description: 'Monitor plant health during flowering' },
+          { week: 16, activity: 'Harvest', description: 'Harvest when foliage starts yellowing' }
+        ]
+      });
+    }
+
+    // Corn/Maize - suitable for pH 5.8-7.0
+    if (soil.ph_level >= 5.8 && soil.ph_level <= 7.0) {
+      recommendations.push({
+        name: 'Corn (Maize)',
+        suitability_score: 85,
+        reasons: [
+          `pH ${soil.ph_level} is suitable for corn`,
+          `Nitrogen level ${soil.nitrogen_level} supports stalk and leaf growth`,
+          `Good phosphorus ${soil.phosphorus_level} for root development`
+        ],
+        planting_season: 'Kharif (June-July)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Deep plowing and leveling' },
+          { week: 2, activity: 'Sowing', description: 'Sow seeds with proper spacing' },
+          { week: 4, activity: 'Thinning', description: 'Remove weak plants' },
+          { week: 6, activity: 'Fertilizer Application', description: 'Apply nitrogen fertilizer' },
+          { week: 10, activity: 'Tasseling', description: 'Monitor for flowering' },
+          { week: 14, activity: 'Harvest', description: 'Harvest when kernels are mature' }
         ]
       });
     }
