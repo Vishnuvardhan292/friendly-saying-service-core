@@ -275,6 +275,94 @@ const Dashboard = () => {
       });
     }
 
+    // Cotton - suitable for pH 7.0-8.5, alkaline soils
+    if (soil.ph_level >= 7.0 && soil.ph_level <= 8.5) {
+      recommendations.push({
+        name: 'Cotton',
+        suitability_score: soil.ph_level >= 7.5 ? 88 : 80,
+        reasons: [
+          `pH ${soil.ph_level} is ideal for cotton in alkaline soils`,
+          `${soil.soil_type || 'Your'} soil supports deep root development`,
+          `Potassium level ${soil.potassium_level} aids fiber quality`
+        ],
+        planting_season: 'Kharif (April-June)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Deep plowing and soil preparation' },
+          { week: 2, activity: 'Sowing', description: 'Sow seeds with proper spacing' },
+          { week: 4, activity: 'Thinning', description: 'Maintain optimal plant population' },
+          { week: 8, activity: 'First Fertilizer', description: 'Apply nitrogen and potassium fertilizer' },
+          { week: 14, activity: 'Flowering', description: 'Monitor for boll development' },
+          { week: 22, activity: 'Harvest', description: 'Pick cotton bolls when fully open' }
+        ]
+      });
+    }
+
+    // Chickpea (Chana) - suitable for pH 6.0-8.5
+    if (soil.ph_level >= 6.0 && soil.ph_level <= 8.5) {
+      recommendations.push({
+        name: 'Chickpea (Chana)',
+        suitability_score: soil.ph_level >= 7.0 ? 85 : 78,
+        reasons: [
+          `pH ${soil.ph_level} is suitable for chickpea cultivation`,
+          `Good phosphorus level ${soil.phosphorus_level} supports root nodule development`,
+          `Nitrogen fixing crop improves soil health`
+        ],
+        planting_season: 'Rabi (October-November)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Prepare seedbed with proper drainage' },
+          { week: 2, activity: 'Sowing', description: 'Sow seeds 8-10 cm deep' },
+          { week: 4, activity: 'Weeding', description: 'Remove weeds manually or with herbicide' },
+          { week: 8, activity: 'Fertilizer Application', description: 'Apply phosphorus-rich fertilizer' },
+          { week: 12, activity: 'Pod Formation', description: 'Monitor for pod development' },
+          { week: 18, activity: 'Harvest', description: 'Harvest when leaves turn yellow' }
+        ]
+      });
+    }
+
+    // Barley - suitable for pH 6.0-8.5, tolerates alkaline soils
+    if (soil.ph_level >= 6.0 && soil.ph_level <= 8.5) {
+      recommendations.push({
+        name: 'Barley',
+        suitability_score: soil.ph_level >= 7.0 ? 82 : 75,
+        reasons: [
+          `pH ${soil.ph_level} is within barley's tolerance range`,
+          `Nitrogen level ${soil.nitrogen_level} supports grain development`,
+          `Drought tolerant crop suitable for varied conditions`
+        ],
+        planting_season: 'Rabi (October-December)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Fine tilth preparation' },
+          { week: 2, activity: 'Sowing', description: 'Sow seeds at proper depth' },
+          { week: 4, activity: 'First Irrigation', description: 'Irrigate at crown root stage' },
+          { week: 8, activity: 'Fertilizer Application', description: 'Apply nitrogen fertilizer' },
+          { week: 12, activity: 'Heading Stage', description: 'Monitor for ear emergence' },
+          { week: 16, activity: 'Harvest', description: 'Harvest when grains are hard' }
+        ]
+      });
+    }
+
+    // Mustard - suitable for pH 6.0-8.0
+    if (soil.ph_level >= 6.0 && soil.ph_level <= 8.0) {
+      recommendations.push({
+        name: 'Mustard',
+        suitability_score: 80,
+        reasons: [
+          `pH ${soil.ph_level} is ideal for mustard cultivation`,
+          `Good organic matter ${soil.organic_matter_percentage}% supports oil content`,
+          `Suitable for winter cultivation`
+        ],
+        planting_season: 'Rabi (October-November)',
+        cultivation_plan: [
+          { week: 1, activity: 'Land Preparation', description: 'Fine seedbed preparation' },
+          { week: 2, activity: 'Sowing', description: 'Broadcast or drill sow seeds' },
+          { week: 4, activity: 'Thinning', description: 'Maintain proper plant spacing' },
+          { week: 6, activity: 'First Irrigation', description: 'Irrigate at flowering stage' },
+          { week: 10, activity: 'Pod Formation', description: 'Monitor for siliqua development' },
+          { week: 14, activity: 'Harvest', description: 'Harvest when pods turn yellow' }
+        ]
+      });
+    }
+
     // Sort by suitability score and take top 3
     const topRecommendations = recommendations
       .sort((a, b) => b.suitability_score - a.suitability_score)
